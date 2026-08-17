@@ -1,0 +1,2824 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Hifadhi Admin Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --canvas:    #F0F4FF;
+      --surface:   #FFFFFF;
+      --primary:   #1D4ED8;
+      --primary-2: #2563EB;
+      --action:    #2563EB;
+      --text:      #111827;
+      --muted:     #6B7280;
+      --border:    #E5E7EB;
+      --success:   #16A34A;
+      --danger:    #DC2626;
+
+      --navy:       var(--primary);
+      --blue:       var(--primary-2);
+      --light-blue: #EFF6FF;
+      --white:      var(--surface);
+      --gray-100:   var(--canvas);
+      --gray-200:   var(--border);
+      --gray-300:   #D1D5DB;
+      --gray-600:   var(--muted);
+      --gray-900:   var(--text);
+      --red:        var(--danger);
+      --orange:     #EA580C;
+      --green:      var(--success);
+    }
+
+    html, body {
+      margin: 0; padding: 0; height: 100%;
+      background: var(--canvas);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', sans-serif;
+      color: var(--text);
+    }
+
+    button, input, select, textarea {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+
+    h1, h2, h3,
+    .login-title,
+    .modal-card h3,
+    .add-user-form h3,
+    .empty-state h3 {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-weight: 700;
+    }
+
+    /* ── App shell ── */
+    #root { display: flex; height: 100%; }
+
+    /* ── Sidebar ── */
+    .sidebar {
+      width: 240px;
+      min-width: 240px;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      position: fixed;
+      top: 0; left: 0;
+      z-index: 100;
+      overflow-y: auto;
+    }
+
+    .sidebar-brand {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      padding: 1.1rem 1rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .sidebar-brand-icon {
+      width: 32px; height: 32px;
+      background: var(--primary);
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      color: #fff;
+      flex-shrink: 0;
+    }
+
+    .sidebar-brand-text {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: -0.01em;
+    }
+
+    .sidebar-nav {
+      flex: 1;
+      padding: 0.75rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+    }
+
+    .tab {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      width: 100%;
+      padding: 0.65rem 0.85rem;
+      background: none;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      color: var(--muted);
+      text-align: left;
+      transition: background 0.15s, color 0.15s;
+    }
+
+    .tab:hover { background: var(--light-blue); color: var(--primary); }
+
+    .tab.active {
+      background: var(--light-blue);
+      color: var(--primary);
+      font-weight: 600;
+    }
+
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    .sidebar-footer {
+      padding: 0.85rem 1rem;
+      border-top: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+    }
+
+    .sidebar-user-row {
+      display: flex; align-items: center; gap: 0.6rem;
+    }
+
+    .sidebar-avatar {
+      width: 30px; height: 30px;
+      background: var(--light-blue);
+      color: var(--primary);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.75rem; font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .sidebar-username {
+      font-size: 0.85rem; font-weight: 600; color: var(--text);
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+
+    /* ── Content area (right of sidebar) ── */
+    .content-wrapper {
+      margin-left: 0;
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      min-height: 100%;
+      overflow: hidden;
+    }
+
+    #root.sidebar-visible .content-wrapper {
+      margin-left: 240px;
+    }
+
+    .top-bar {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0.85rem 1.5rem;
+      display: flex;
+      align-items: center;
+      position: sticky; top: 0; z-index: 50;
+    }
+
+    .top-bar-title {
+      font-size: 0.95rem; font-weight: 700;
+      color: var(--text); letter-spacing: -0.01em;
+    }
+
+    /* ── Login ── */
+    .login-container {
+      display: flex; justify-content: center; align-items: center;
+      height: 100vh; background: var(--canvas);
+    }
+
+    .login-card {
+      background: var(--white);
+      padding: 2rem;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.04);
+      width: 100%; max-width: 400px;
+    }
+
+    .login-icon-box {
+      width: 56px; height: 56px;
+      background: var(--primary);
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 1rem;
+      color: #fff;
+    }
+
+    .login-title {
+      font-size: 1.6rem; font-weight: 700;
+      color: var(--text); text-align: center; margin-bottom: 0.2rem;
+    }
+
+    .login-subtitle {
+      font-size: 1rem; color: var(--primary);
+      text-align: center; font-weight: 500; margin-bottom: 0.4rem;
+    }
+
+    .login-desc {
+      font-size: 0.9rem; color: var(--gray-600);
+      text-align: center; margin-bottom: 1.5rem;
+    }
+
+    .label-row {
+      display: flex; justify-content: space-between;
+      align-items: center; margin-bottom: 0.5rem;
+    }
+
+    .label-row label { margin-bottom: 0; }
+
+    .forgot-link { font-size: 0.85rem; color: var(--primary); text-decoration: none; }
+    .forgot-link:hover { text-decoration: underline; }
+
+    .input-wrapper { position: relative; display: flex; align-items: center; }
+
+    .input-icon {
+      position: absolute; left: 0.75rem; color: var(--gray-600);
+      display: flex; align-items: center; pointer-events: none;
+    }
+
+    .eye-toggle {
+      position: absolute; right: 0.75rem;
+      background: none; border: none; cursor: pointer;
+      color: var(--gray-600); display: flex; align-items: center; padding: 0;
+    }
+
+    .input-wrapper input.has-right-icon { padding-right: 2.5rem; }
+
+    .divider {
+      display: flex; align-items: center; gap: 0.75rem; margin: 1.5rem 0 1rem;
+    }
+
+    .divider-line { flex: 1; height: 1px; background: var(--gray-200); }
+
+    .divider-text {
+      font-size: 11px; color: var(--muted);
+      letter-spacing: 0.08em; text-transform: uppercase; font-weight: 500;
+    }
+
+    .login-footer { text-align: center; font-size: 0.8rem; color: var(--gray-600); }
+    .login-footer a { color: var(--gray-600); text-decoration: none; }
+    .login-footer a:hover { text-decoration: underline; }
+
+    .login-version { text-align: center; font-size: 0.75rem; color: var(--gray-300); margin-top: 0.4rem; }
+
+    .login-encryption {
+      text-align: center; font-size: 0.75rem; color: var(--green);
+      margin-top: 0.4rem; font-weight: 500; letter-spacing: 0.05em;
+    }
+
+    /* ── Tamper banners ── */
+    #tamperBanners {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      width: 320px;
+      max-width: calc(100% - 40px);
+      z-index: 1000;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .tamper-banner {
+      background: var(--red);
+      color: #fff;
+      padding: 0.85rem 1.15rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-weight: 500;
+      font-size: 0.9rem;
+      border-radius: 8px;
+      box-shadow: 0 10px 15px -3px rgba(0,0,0,0.15), 0 4px 6px -2px rgba(0,0,0,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      animation: toast-slide-in 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    .tamper-banner-dismiss {
+      background: none; border: none; color: #fff;
+      cursor: pointer; font-size: 1.1rem; padding: 0 0.4rem; line-height: 1;
+    }
+
+    @keyframes toast-slide-in {
+      from { transform: translateX(120%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+
+    /* ── Form elements ── */
+    .form-group { margin-bottom: 1rem; }
+
+    label { display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--gray-900); }
+
+    input[type="text"],
+    input[type="password"],
+    input[type="date"],
+    select {
+      width: 100%; padding: 0.75rem;
+      border: 1px solid var(--gray-300);
+      border-radius: 8px; font-size: 1rem;
+      background: var(--surface);
+      transition: border-color 0.2s;
+    }
+
+    input[type="text"]:focus,
+    input[type="password"]:focus,
+    input[type="date"]:focus,
+    select:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(37,99,235,0.12);
+    }
+
+    /* ── Buttons ── */
+    .btn-primary {
+      width: 100%; padding: 0.75rem;
+      background: var(--action); color: #fff;
+      border: none; border-radius: 10px;
+      font-size: 1rem; font-weight: 600;
+      cursor: pointer; transition: background 0.2s;
+    }
+
+    .btn-primary:hover { background: var(--primary); }
+    .btn-primary:disabled { background: var(--gray-300); cursor: not-allowed; }
+
+    .logout-btn {
+      background: var(--red); color: #fff;
+      border: none; padding: 0.5rem 1rem;
+      border-radius: 10px; cursor: pointer;
+      font-weight: 500; font-size: 0.85rem;
+      width: 100%; transition: background 0.2s;
+    }
+
+    .logout-btn:hover { background: #B91C1C; }
+
+    .btn-secondary {
+      background: #374151; color: #fff;
+      border: none; padding: 0.5rem 1rem;
+      border-radius: 10px; cursor: pointer;
+      font-weight: 500; font-size: 0.9rem;
+      transition: background 0.2s;
+    }
+
+    .btn-secondary:hover { background: #1F2937; }
+
+    .btn-export {
+      background: var(--green); color: #fff;
+      border: none; padding: 0.5rem 1rem;
+      border-radius: 10px; cursor: pointer;
+      font-weight: 500; font-size: 0.9rem;
+      transition: background 0.2s;
+    }
+
+    .btn-export:hover { background: #15803D; }
+
+    .btn-cancel {
+      background: var(--gray-200); color: var(--gray-900);
+      border: none; padding: 0.5rem 1.2rem;
+      border-radius: 10px; cursor: pointer;
+      font-weight: 500; transition: background 0.2s;
+    }
+
+    .btn-cancel:hover { background: var(--gray-300); }
+
+    .refresh-btn {
+      background: #374151; color: #fff;
+      border: none; padding: 0.5rem 1rem;
+      border-radius: 10px; cursor: pointer;
+      font-weight: 500; transition: background 0.2s;
+      margin-bottom: 1rem;
+    }
+
+    .refresh-btn:hover { background: #1F2937; }
+
+    /* ── Alerts ── */
+    .alert { padding: 0.75rem 1rem; border-radius: 6px; margin-bottom: 1rem; font-size: 0.9rem; }
+    .alert-error  { background: #FEF2F2; color: var(--red);   border-left: 4px solid var(--red); }
+    .alert-success{ background: #F0FDF4; color: var(--green); border-left: 4px solid var(--green); }
+
+    /* ── Dashboard / main content ── */
+    .dashboard {
+      flex: 1; overflow-y: auto;
+      padding: 1.5rem 2rem;
+      background: var(--canvas);
+    }
+
+    .dashboard h2 {
+      color: var(--text); margin-bottom: 1.5rem;
+      font-size: 1.15rem; font-weight: 700;
+    }
+
+    /* ── Stat cards ── */
+    .stat-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 1rem; margin-bottom: 1.5rem;
+    }
+
+    .stat-card {
+      background: var(--white);
+      border-radius: 14px; border: 1px solid var(--border);
+      padding: 1.25rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.04);
+    }
+
+    .stat-card-label {
+      font-size: 11px; letter-spacing: 0.08em;
+      text-transform: uppercase; color: var(--muted); margin-bottom: 0.4rem;
+    }
+
+    .stat-card-value { font-size: 2rem; font-weight: 700; color: var(--text); line-height: 1; }
+    .stat-card-subtitle { font-size: 0.8rem; color: var(--gray-600); margin-top: 0.3rem; }
+
+    /* ── Locker grid ── */
+    .locker-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 1rem; margin-bottom: 2rem;
+    }
+
+    .locker-card {
+      background: var(--white);
+      border-radius: 14px; border: 1px solid var(--border);
+      padding: 1.5rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.04);
+      transition: box-shadow 0.2s;
+    }
+
+    .locker-card:hover {
+      box-shadow: 0 2px 6px rgba(0,0,0,0.06), 0 8px 20px rgba(0,0,0,0.08);
+    }
+
+    .locker-id { font-size: 1rem; font-weight: 700; color: var(--text); margin-bottom: 0.5rem; }
+
+    .locker-status {
+      display: inline-block;
+      padding: 0.25rem 0.65rem;
+      border-radius: 999px;
+      font-size: 0.8rem; font-weight: 600; margin-bottom: 1rem;
+    }
+
+    .status-locked   { background: #F0FDF4; color: #16A34A; }
+    .status-unlocked { background: #F9FAFB; color: var(--muted); }
+    .status-alert    { background: #FEF2F2; color: var(--danger); }
+
+    .locker-info { font-size: 0.875rem; color: var(--gray-600); margin-bottom: 1rem; line-height: 1.5; }
+
+    .locker-buttons { display: flex; flex-direction: column; gap: 0.4rem; margin-top: 0.5rem; }
+
+    .btn-small {
+      width: 100%; padding: 0.45rem 0.6rem;
+      border: none; border-radius: 8px;
+      font-size: 0.875rem; font-weight: 500;
+      cursor: pointer; transition: all 0.2s;
+    }
+
+    .btn-lock    { background: var(--green);   color: #fff; }
+    .btn-lock:hover { background: #15803D; }
+    .btn-unlock  { background: var(--orange);  color: #fff; }
+    .btn-unlock:hover { background: #C2410C; }
+    .btn-assign  { background: var(--primary); color: #fff; }
+    .btn-assign:hover { background: var(--primary-2); }
+
+    .btn-unassign {
+      background: var(--gray-600); color: #fff;
+      width: 100%; margin-top: 0.5rem; border-radius: 8px;
+    }
+
+    .btn-unassign:hover { background: #374151; }
+    .btn-small:disabled { background: var(--gray-300); cursor: not-allowed; }
+
+    /* ── Modal ── */
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.4);
+      display: flex; justify-content: center; align-items: center; z-index: 500;
+    }
+
+    .modal-card {
+      background: var(--white);
+      border-radius: 14px; border: 1px solid var(--border);
+      padding: 2rem; width: 100%; max-width: 380px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.04);
+    }
+
+    .modal-card h3 { color: var(--text); margin-bottom: 1.5rem; }
+
+    .modal-actions {
+      display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 1.5rem;
+    }
+
+    /* ── Tables ── */
+    .table-container {
+      background: var(--white);
+      border-radius: 14px; border: 1px solid var(--border);
+      overflow: hidden;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.04);
+    }
+
+    table { width: 100%; border-collapse: collapse; }
+
+    thead { background: var(--light-blue); border-bottom: 2px solid var(--border); }
+
+    th { padding: 1rem; text-align: left; font-weight: 600; color: var(--text); font-size: 0.875rem; }
+
+    td { padding: 0.9rem 1rem; border-bottom: 1px solid var(--gray-200); font-size: 0.9rem; }
+
+    tbody tr:hover { background: var(--canvas); }
+
+    .action-buttons { display: flex; gap: 0.5rem; }
+
+    .btn-delete {
+      background: var(--red); color: #fff; border: none;
+      padding: 0.35rem 0.75rem; border-radius: 8px;
+      cursor: pointer; font-size: 0.8rem; font-weight: 500; transition: background 0.2s;
+    }
+
+    .btn-delete:hover { background: #B91C1C; }
+
+    .btn-suspend {
+      background: var(--orange); color: #fff; border: none;
+      padding: 0.35rem 0.75rem; border-radius: 8px;
+      cursor: pointer; font-size: 0.8rem; font-weight: 500; transition: background 0.2s;
+    }
+
+    .btn-suspend:hover { background: #C2410C; }
+
+    .btn-activate {
+      background: var(--green); color: #fff; border: none;
+      padding: 0.35rem 0.75rem; border-radius: 8px;
+      cursor: pointer; font-size: 0.8rem; font-weight: 500; transition: background 0.2s;
+    }
+
+    .btn-activate:hover { background: #15803D; }
+
+    .status-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 5px; vertical-align: middle; }
+    .status-dot-green { background: var(--green); }
+    .status-dot-red   { background: var(--red); }
+
+    /* ── Log toolbar ── */
+    .log-toolbar { display: flex; gap: 0.75rem; align-items: flex-end; flex-wrap: wrap; margin-bottom: 1rem; }
+    .log-toolbar .form-group { margin-bottom: 0; }
+    .log-toolbar label { font-size: 0.85rem; margin-bottom: 0.3rem; }
+    .log-toolbar input[type="date"] { padding: 0.5rem 0.6rem; font-size: 0.9rem; width: auto; }
+
+    /* ── Add user form ── */
+    .add-user-form {
+      background: var(--white); padding: 1.5rem;
+      border-radius: 14px; border: 1px solid var(--border);
+      margin-bottom: 2rem; max-width: 500px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.04);
+    }
+
+    .add-user-form h3 { color: var(--text); margin-bottom: 1rem; }
+
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .form-row.full { grid-template-columns: 1fr; }
+
+    /* ── Loading ── */
+    .loading { text-align: center; padding: 2rem; color: var(--gray-600); }
+
+    .spinner {
+      display: inline-block; width: 20px; height: 20px;
+      border: 3px solid var(--gray-300); border-top-color: var(--primary);
+      border-radius: 50%; animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Tamper alerts tab ── */
+    .tamper-alerts { margin-bottom: 2rem; }
+
+    .alert-item {
+      background: var(--white); border-left: 4px solid var(--red);
+      padding: 1.25rem; border-radius: 10px; margin-bottom: 1rem;
+      display: flex; justify-content: space-between; align-items: center;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.04);
+    }
+
+    .alert-time { font-size: 0.85rem; color: var(--gray-600); margin-top: 0.5rem; }
+
+    /* ── Empty state ── */
+    .empty-state { text-align: center; padding: 3rem 1rem; color: var(--gray-600); }
+    .empty-state h3 { color: var(--gray-900); margin-bottom: 0.5rem; }
+
+    @media (max-width: 768px) {
+      .sidebar { display: none !important; }
+      #root.sidebar-visible .content-wrapper { margin-left: 0; }
+      .locker-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+      .form-row { grid-template-columns: 1fr; }
+      .dashboard { padding: 1rem; }
+    }
+
+    /* ── Notification Centre ── */
+    .notification-bell-container {
+      position: relative;
+      display: inline-block;
+      cursor: pointer;
+      padding: 0.5rem;
+      border-radius: 8px;
+      transition: background 0.2s;
+    }
+    .notification-bell-container:hover {
+      background: var(--gray-100);
+    }
+    .notification-badge {
+      position: absolute;
+      top: 0; right: 0;
+      background: var(--danger); color: #fff;
+      font-size: 10px; font-weight: 700;
+      width: 18px; height: 18px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      border: 2px solid var(--surface);
+    }
+    .notification-drawer {
+      position: fixed;
+      top: 0; right: -380px;
+      width: 380px; height: 100%;
+      background: var(--surface);
+      border-left: 1px solid var(--border);
+      box-shadow: -4px 0 15px rgba(0,0,0,0.15);
+      transition: right 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      z-index: 1000;
+      display: flex;
+      flex-direction: column;
+    }
+    .notification-drawer.active {
+      right: 0;
+    }
+    .notification-drawer-header {
+      padding: 1.25rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--canvas);
+    }
+    .notification-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1rem;
+    }
+    .notification-item {
+      padding: 0.85rem;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 0.5rem;
+      border-radius: 8px;
+      background: var(--gray-100);
+      position: relative;
+      transition: all 0.2s;
+      border-left: 4px solid var(--muted);
+    }
+    .notification-item.unread {
+      border-left-color: var(--primary);
+      background: var(--light-blue);
+    }
+    .notification-item-message {
+      font-size: 0.85rem;
+      color: var(--text);
+      margin-bottom: 0.3rem;
+      font-weight: 500;
+    }
+    .notification-item-time {
+      font-size: 0.75rem;
+      color: var(--muted);
+    }
+    .notification-actions {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 0.5rem;
+    }
+    .notification-btn {
+      font-size: 0.75rem;
+      padding: 0.25rem 0.5rem;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+      background: var(--gray-200);
+      color: var(--text);
+      font-weight: 500;
+    }
+    .notification-btn.read-btn {
+      background: var(--light-blue);
+      color: var(--primary);
+    }
+    .notification-btn.clear-btn {
+      background: #FEE2E2;
+      color: var(--red);
+    }
+    
+    /* ── Audit Logs Pagination ── */
+    .pagination-container {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 1rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--border);
+    }
+    .pagination-btn {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 0.4rem 0.8rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-weight: 500;
+      transition: background 0.2s;
+    }
+    .pagination-btn:hover:not(:disabled) {
+      background: var(--gray-100);
+    }
+    .pagination-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="tamperBanners"></div>
+
+  <div id="root">
+    <!-- Sidebar rail (hidden on login, shown on dashboard) -->
+    <aside class="sidebar" id="sidebarPanel" style="display:none;">
+      <div class="sidebar-brand">
+        <div class="sidebar-brand-icon" aria-hidden="true">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+          </svg>
+        </div>
+        <span class="sidebar-brand-text">Hifadhi</span>
+      </div>
+      <nav class="sidebar-nav" id="sidebarNav"></nav>
+      <div class="sidebar-footer" id="headerRight" style="display:none;">
+        <div class="sidebar-user-row">
+          <div class="sidebar-avatar" aria-hidden="true">A</div>
+          <div id="userName" class="sidebar-username">Admin</div>
+        </div>
+        <button class="logout-btn" id="nav-signout" aria-label="Sign out" data-testid="nav-signout" onclick="logout()">Sign Out</button>
+      </div>
+    </aside>
+
+    <!-- Right side: top bar + scrollable content -->
+    <div class="content-wrapper" id="contentWrapper">
+      <header class="top-bar" style="display:flex; justify-content:space-between; align-items:center; width:100%;">
+        <h1 class="top-bar-title">Hifadhi Smart Locker Management</h1>
+        <div id="notification-bell-wrapper" style="display:none; align-items:center;">
+          <div class="notification-bell-container" onclick="toggleNotificationDrawer(true)">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+              <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+            </svg>
+            <span class="notification-badge" id="unread-count" style="display:none;">0</span>
+          </div>
+        </div>
+      </header>
+      <main id="mainContent"></main>
+    </div>
+  </div>
+
+  <div id="assignModalPortal"></div>
+
+  <!-- Notification Drawer -->
+  <div class="notification-drawer" id="notificationDrawer">
+    <div class="notification-drawer-header">
+      <h3 style="margin:0; font-size:1.1rem;">Notifications</h3>
+      <div style="display:flex; gap:0.5rem; align-items:center;">
+        <button class="btn-secondary" style="padding:0.3rem 0.6rem; font-size:0.75rem; background:var(--primary);" onclick="clearAllNotifications()">Clear All</button>
+        <button class="btn-cancel" style="padding:0.3rem 0.6rem; font-size:0.75rem;" onclick="toggleNotificationDrawer(false)">Close</button>
+      </div>
+    </div>
+    <div style="padding:0.5rem 1rem; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; background:var(--canvas);">
+      <span style="font-size:0.8rem; color:var(--muted);">Filter by type:</span>
+      <select id="notificationFilter" onchange="renderNotifications()" style="padding:0.25rem 0.5rem; font-size:0.8rem; width:auto; border-radius:4px; border:1px solid var(--border);">
+        <option value="ALL">All Events</option>
+        <option value="OTP_GENERATED">OTP Generated</option>
+        <option value="SUCCESSFUL_UNLOCK">Successful Unlock</option>
+        <option value="FAILED_UNLOCK">Failed Unlock</option>
+        <option value="TAMPER_ALERT">Tamper Alert</option>
+        <option value="USER_REGISTRATION">User Registration</option>
+        <option value="USER_REMOVAL">User Removal</option>
+        <option value="LOCKER_ASSIGNMENT">Locker Assignment</option>
+      </select>
+    </div>
+    <div class="notification-list" id="notificationList">
+      <div style="text-align:center; padding:2rem; color:var(--muted);">No notifications</div>
+    </div>
+  </div>
+
+  <script>
+    const API_URL = 'http://localhost:3000/api';
+    let authToken   = localStorage.getItem('adminToken');
+    let currentUser = localStorage.getItem('currentUser');
+
+    // Change 2: tamper polling state
+    let tamperPollTimer   = null;
+    let seenTamperIds     = new Set();
+    let tamperInitialized = false;
+    let lockerRefreshTimer = null;
+    let notificationPollTimer = null;
+    let notificationsList = [];
+
+    function handleUnauthorized(response) {
+      if (response.status === 401) { logout(); return true; }
+      return false;
+    }
+
+    let allLogsData = [];
+    let allUsersData = [];
+    let allLockersData = [];
+
+    /* ════════════════════════════════════════════
+       INIT
+    ════════════════════════════════════════════ */
+    async function init() {
+      // ?logout=1 forces a fully clean unauthenticated state (used by test runners).
+      // Must run FIRST — before any session-restore logic reads the now-nulled variables.
+      if (new URLSearchParams(window.location.search).get('logout') === '1') {
+        localStorage.removeItem('adminToken');
+        localStorage.removeItem('currentUser');
+        try { sessionStorage.clear(); } catch (_) {}
+        try {
+          document.cookie.split(';').forEach(c => {
+            const name = c.trim().split('=')[0];
+            if (name) document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
+          });
+        } catch (_) {}
+        authToken   = null;
+        currentUser = null;
+        history.replaceState(null, '', window.location.pathname);
+        showLogin();   // render immediately — do not fall through to session check
+        return;
+      }
+      if (authToken) {
+        await checkSession();
+        if (currentUser) {
+          showDashboard();
+        } else {
+          showLogin();
+        }
+      } else {
+        showLogin();
+      }
+    }
+
+    /* ════════════════════════════════════════════
+       CHANGE 1 — Redesigned login
+    ════════════════════════════════════════════ */
+    function showLogin() {
+      document.getElementById('sidebarPanel').style.display = 'none';
+      document.getElementById('root').classList.remove('sidebar-visible');
+      document.getElementById('headerRight').style.display = 'none';
+      const savedUser = localStorage.getItem('rememberedUser') || '';
+      document.getElementById('mainContent').innerHTML = `
+        <div class="login-container">
+          <div class="login-card">
+
+            <div class="login-icon-box">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+              </svg>
+            </div>
+
+            <div class="login-title">Smart Locker</div>
+            <div class="login-subtitle">Admin Portal</div>
+
+            <form onsubmit="handleLogin(event)" autocomplete="off">
+              <div class="form-group">
+                <label for="username">Username</label>
+                <input type="text" id="username" aria-label="Username" data-testid="username-input" required autocomplete="username" value="${savedUser.replace(/"/g, '&quot;')}">
+              </div>
+
+              <div class="form-group">
+                <label for="password">Password</label>
+                <div class="input-wrapper">
+                  <input type="password" id="password" aria-label="Password" data-testid="password-input" required autocomplete="current-password" class="has-right-icon">
+                  <button type="button" class="eye-toggle" data-testid="password-toggle" onclick="togglePasswordVisibility()" aria-label="Toggle password visibility">
+                    <svg id="eyeIcon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                      <circle cx="12" cy="12" r="3"/>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+
+              <div class="form-group" style="display:flex;align-items:center;gap:0.5rem;">
+                <input type="checkbox" id="rememberDevice" style="width:auto;margin:0;" ${savedUser ? 'checked' : ''}>
+                <label for="rememberDevice" style="margin:0;font-weight:400;font-size:0.9rem;cursor:pointer;">Remember device for 30 days</label>
+              </div>
+
+              <button type="submit" class="btn-primary" id="sign-in-btn" aria-label="Sign In" data-testid="sign-in-btn">Sign In</button>
+              <div id="login-error" role="alert" data-testid="login-error" style="margin-top:0.75rem;"></div>
+            </form>
+
+            <div class="login-version">v1.0.0 Build 2024</div>
+          </div>
+        </div>
+      `;
+    }
+
+    function togglePasswordVisibility() {
+      const input = document.getElementById('password');
+      const icon  = document.getElementById('eyeIcon');
+      if (input.type === 'password') {
+        input.type = 'text';
+        icon.innerHTML = `
+          <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
+          <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
+          <path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"/>
+          <line x1="1" y1="1" x2="23" y2="23"/>
+        `;
+      } else {
+        input.type = 'password';
+        icon.innerHTML = `
+          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+          <circle cx="12" cy="12" r="3"/>
+        `;
+      }
+    }
+
+    async function handleLogin(e) {
+      e.preventDefault();
+      const username  = document.getElementById('username').value;
+      const password  = document.getElementById('password').value;
+      const remember  = document.getElementById('rememberDevice').checked;
+      const loginBtn  = document.getElementById('sign-in-btn');
+      const alertDiv  = document.getElementById('login-error');
+
+      loginBtn.disabled = true;
+      alertDiv.innerHTML = '';
+
+      try {
+        const response = await fetch(`${API_URL}/admin/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password })
+        });
+
+        const data = await response.json();
+
+        if (response.ok && data.success) {
+          authToken   = data.adminId || username;
+          currentUser = data.user?.name || username;
+          localStorage.setItem('adminToken',   authToken);
+          localStorage.setItem('currentUser',  currentUser);
+          if (remember) {
+            localStorage.setItem('rememberedUser', username);
+          } else {
+            localStorage.removeItem('rememberedUser');
+          }
+          showDashboard();
+        } else {
+          alertDiv.innerHTML = `<div class="alert alert-error">${data.message || 'Login failed'}</div>`;
+          loginBtn.disabled = false;
+        }
+      } catch (error) {
+        alertDiv.innerHTML = `<div class="alert alert-error">Connection error: ${error.message}</div>`;
+        loginBtn.disabled = false;
+      }
+    }
+
+    /* ════════════════════════════════════════════
+       DASHBOARD
+    ════════════════════════════════════════════ */
+    function showDashboard() {
+      document.getElementById('sidebarPanel').style.display = 'flex';
+      document.getElementById('root').classList.add('sidebar-visible');
+      document.getElementById('headerRight').style.display = '';
+
+      document.getElementById('sidebarNav').innerHTML = `
+        <button class="tab active" id="nav-lockers" data-testid="nav-lockers" onclick="switchTab('lockers')">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          Lockers
+        </button>
+        <button class="tab" id="nav-users" data-testid="nav-users" onclick="switchTab('users')">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          User Management
+        </button>
+        <button class="tab" id="nav-logs" data-testid="nav-logs" onclick="switchTab('logs')">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+          Audit Logs
+        </button>
+        <button class="tab" id="nav-security" data-testid="nav-security" onclick="switchTab('alerts')">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          Tamper Alerts
+        </button>
+        <button class="tab" id="nav-health-btn" data-testid="nav-health-btn" onclick="switchTab('health')">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+          System Health
+        </button>
+        <button class="tab" id="nav-analytics-btn" data-testid="nav-analytics-btn" onclick="switchTab('analytics')">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+          Analytics
+        </button>
+      `;
+
+      document.getElementById('mainContent').innerHTML = `
+        <div class="dashboard">
+          <!-- hidden nav anchors for test runner targeting -->
+          <button id="nav-overview"  data-testid="nav-overview"  style="display:none" aria-hidden="true"></button>
+          <button id="nav-analytics" data-testid="nav-analytics" style="display:none" aria-hidden="true"></button>
+
+          <div id="lockers" class="tab-content active">
+            <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;margin-bottom:0.75rem;">
+              <input type="text" id="locker-search" data-testid="locker-search" placeholder="Search lockers…" style="padding:0.45rem 0.7rem;border:1px solid var(--gray-300);border-radius:4px;font-size:0.9rem;flex:1;min-width:140px;" oninput="filterLockerCards(this.value)">
+              <select id="status-filter" data-testid="status-filter" style="padding:0.45rem 0.7rem;border:1px solid var(--gray-300);border-radius:4px;font-size:0.9rem;" onchange="filterLockerCards(document.getElementById('locker-search').value)">
+                <option value="">All statuses</option>
+                <option value="locked">Locked</option>
+                <option value="unlocked">Unlocked</option>
+                <option value="alert">Alert</option>
+              </select>
+              <button class="refresh-btn" id="refresh-btn" data-testid="refresh-btn" onclick="refreshLockers()">🔄 Refresh Lockers</button>
+            </div>
+            <div id="lockerStats">
+              <div class="stat-cards">
+                <div class="stat-card" data-testid="stat-total">
+                  <div class="stat-card-label">Total Lockers</div>
+                  <div class="stat-card-value" id="sv-total">—</div>
+                </div>
+                <div class="stat-card" data-testid="stat-occupied">
+                  <div class="stat-card-label">Occupied</div>
+                  <div class="stat-card-value" id="sv-occupied">—</div>
+                </div>
+                <div class="stat-card" data-testid="stat-available">
+                  <div class="stat-card-label">Available</div>
+                  <div class="stat-card-value" id="sv-available" style="color:var(--green)">—</div>
+                </div>
+                <div class="stat-card" data-testid="stat-alerts">
+                  <div class="stat-card-label">Active Alerts</div>
+                  <div class="stat-card-value" id="sv-alerts" style="color:var(--red)">—</div>
+                </div>
+                <div class="stat-card" data-testid="stat-users">
+                  <div class="stat-card-label">Registered Users</div>
+                  <div class="stat-card-value" id="sv-users">—</div>
+                </div>
+                <div class="stat-card" data-testid="stat-unlocks-today">
+                  <div class="stat-card-label">Unlocks Today</div>
+                  <div class="stat-card-value" id="sv-unlocks-today" style="color:var(--green)">—</div>
+                </div>
+                <div class="stat-card" data-testid="stat-failed-today">
+                  <div class="stat-card-label">Failed Today</div>
+                  <div class="stat-card-value" id="sv-failed-today" style="color:var(--orange)">—</div>
+                </div>
+              </div>
+            </div>
+            <div id="lockersContent"></div>
+          </div>
+
+          <div id="users" class="tab-content">
+            <div class="add-user-form" id="add-user-form-panel">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem;">
+                <h3 style="margin:0;">Add New User</h3>
+                <button type="button" data-testid="add-user-btn" class="btn-secondary" onclick="document.getElementById('add-user-fields').style.display=document.getElementById('add-user-fields').style.display==='none'?'block':'none'">+ Add User</button>
+              </div>
+              <div id="add-user-fields">
+                <div id="add-user-error" data-testid="add-user-error" role="alert"></div>
+                <form onsubmit="handleAddUser(event)">
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label for="newUserName">Full Name</label>
+                      <input type="text" id="newUserName" data-testid="new-user-name" required>
+                    </div>
+                    <div class="form-group">
+                      <label for="newUserId">Student ID</label>
+                      <input type="text" id="newUserId" data-testid="new-user-id" placeholder="e.g. INTE/ON/0001/01/24" required>
+                    </div>
+                  </div>
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label for="newUserPhone">Phone</label>
+                      <input type="tel" id="newUserPhone" data-testid="new-user-phone" placeholder="+254…" required>
+                    </div>
+                    <div class="form-group">
+                      <label for="newUserLocker">Locker ID</label>
+                      <select id="newUserLocker" data-testid="new-user-locker" style="padding:0.45rem 0.7rem;border:1px solid var(--gray-300);border-radius:4px;font-size:0.9rem;" required></select>
+                    </div>
+                  </div>
+                  <div class="form-row full">
+                    <div class="form-group">
+                      <label for="newUserPin">PIN (4 digits)</label>
+                      <input type="password" id="newUserPin" data-testid="new-user-pin" maxlength="4" inputmode="numeric" placeholder="••••" required>
+                    </div>
+                  </div>
+                  <button type="submit" class="btn-primary" data-testid="add-user-submit">Add User</button>
+                </form>
+              </div>
+            </div>
+            <div style="margin-bottom:0.5rem;">
+              <input type="text" data-testid="user-search" placeholder="Search users…" style="padding:0.45rem 0.7rem;border:1px solid var(--gray-300);border-radius:4px;font-size:0.9rem;width:100%;" oninput="filterUserRows(this.value)">
+            </div>
+            <div id="usersContent"></div>
+          </div>
+
+          <div id="logs" class="tab-content">
+            <div class="log-toolbar" style="margin-bottom:1.5rem; gap:1rem;">
+              <div class="form-group">
+                <label for="log-search">Search (User/Locker)</label>
+                <input type="text" id="log-search" data-testid="log-search" aria-label="Search logs" placeholder="User or Locker ID…" oninput="applyLogFilter()" style="padding:0.5rem 0.6rem; font-size:0.9rem;">
+              </div>
+              <div class="form-group">
+                <label for="log-event-filter">Event</label>
+                <select id="log-event-filter" data-testid="log-event-filter" aria-label="Event filter" onchange="applyLogFilter()" style="padding:0.5rem 0.6rem; font-size:0.9rem;">
+                  <option value="">All events</option>
+                  <option value="OTP_REQUEST">OTP Request</option>
+                  <option value="OTP_UNLOCK">OTP Unlock</option>
+                  <option value="PIN_UNLOCK">PIN Unlock</option>
+                  <option value="ADMIN_UNLOCK">Admin Unlock</option>
+                  <option value="ADMIN_LOCK">Admin Lock</option>
+                  <option value="ASSIGN">Assign</option>
+                  <option value="UNASSIGN">Unassign</option>
+                  <option value="TAMPER_ALERT">Tamper Alert</option>
+                  <option value="USSD_REQUEST">USSD Request</option>
+                  <option value="USSD_OTP_GENERATED">USSD OTP Generated</option>
+                  <option value="USER_CREATE">User Registration</option>
+                  <option value="USER_DELETE">User Removal</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="log-status-filter">Status</label>
+                <select id="log-status-filter" onchange="applyLogFilter()" style="padding:0.5rem 0.6rem; font-size:0.9rem; border:1px solid var(--gray-300); border-radius:8px;">
+                  <option value="">All Statuses</option>
+                  <option value="SUCCESS">Success</option>
+                  <option value="FAILED">Failed</option>
+                  <option value="ALERT">Alert</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="log-from-date">From</label>
+                <input type="date" id="log-from-date" data-testid="log-from-date" aria-label="From date">
+              </div>
+              <div class="form-group">
+                <label for="log-to-date">To</label>
+                <input type="date" id="log-to-date" data-testid="log-to-date" aria-label="To date">
+              </div>
+              <div style="display:flex; gap:0.5rem; align-items:flex-end; margin-top: auto; padding-bottom: 0.15rem;">
+                <button class="btn-secondary" id="log-filter-btn" data-testid="log-filter-btn" aria-label="Filter logs" onclick="applyLogFilter()" style="padding:0.5rem 1rem;">Filter</button>
+                <button class="btn-secondary" aria-label="Refresh logs" onclick="refreshLogs()" style="padding:0.5rem 1rem;">🔄</button>
+                <button class="btn-export" id="export-csv-btn" data-testid="export-csv-btn" aria-label="Export CSV" onclick="exportLogsCSV()" style="padding:0.5rem 1rem;">⬇ CSV</button>
+                <button class="btn-export" id="export-pdf-btn" aria-label="Export PDF" onclick="exportLogsPDF()" style="padding:0.5rem 1rem; background:var(--primary);">⬇ PDF</button>
+              </div>
+            </div>
+            <div id="logsContent"></div>
+            <div id="logsPagination"></div>
+          </div>
+
+          <div id="alerts" class="tab-content">
+            <div id="alertsContent" data-testid="security-table"></div>
+          </div>
+
+          <div id="analytics" class="tab-content">
+            <div class="log-toolbar">
+              <div class="form-group">
+                <label for="analytics-locker-filter">Locker</label>
+                <select id="analytics-locker-filter" onchange="applyAnalyticsFilters()">
+                  <option value="">All Lockers</option>
+                  <option value="locker_01">Locker 01</option>
+                  <option value="locker_02">Locker 02</option>
+                  <option value="locker_03">Locker 03</option>
+                  <option value="locker_04">Locker 04</option>
+                  <option value="locker_05">Locker 05</option>
+                  <option value="locker_06">Locker 06</option>
+                  <option value="locker_07">Locker 07</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="analytics-event-filter">Event</label>
+                <select id="analytics-event-filter" onchange="applyAnalyticsFilters()">
+                  <option value="">All Events</option>
+                  <option value="OTP_UNLOCK">OTP Unlock</option>
+                  <option value="PIN_UNLOCK">PIN Unlock</option>
+                  <option value="ADMIN_UNLOCK">Admin Unlock</option>
+                  <option value="TAMPER_ALERT">Tamper Alert</option>
+                  <option value="FAILED">Failed Attempt</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="analytics-from-date">From</label>
+                <input type="date" id="analytics-from-date" onchange="applyAnalyticsFilters()">
+              </div>
+              <div class="form-group">
+                <label for="analytics-to-date">To</label>
+                <input type="date" id="analytics-to-date" onchange="applyAnalyticsFilters()">
+              </div>
+              <button class="btn-secondary" onclick="resetAnalyticsFilters()">Reset</button>
+              <button class="btn-secondary" onclick="calculateAnalytics()">🔄 Refresh Stats</button>
+            </div>
+
+            <div class="stat-cards" style="margin-top: 1rem;">
+              <div class="stat-card">
+                <div class="stat-card-label">Total Unlocks</div>
+                <div class="stat-card-value" id="an-total-unlocks">0</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-card-label">OTP Unlocks</div>
+                <div class="stat-card-value" id="an-otp-unlocks">0</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-card-label">PIN Unlocks</div>
+                <div class="stat-card-value" id="an-pin-unlocks">0</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-card-label">Admin Unlocks</div>
+                <div class="stat-card-value" id="an-admin-unlocks">0</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-card-label">Failed Attempts</div>
+                <div class="stat-card-value" id="an-failed-attempts" style="color:var(--orange)">0</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-card-label">Tamper Alerts</div>
+                <div class="stat-card-value" id="an-tamper-alerts" style="color:var(--red)">0</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-card-label">Most Active Locker</div>
+                <div class="stat-card-value" id="an-most-active">—</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-card-label">Avg Unlocks / Locker</div>
+                <div class="stat-card-value" id="an-avg-unlocks">0</div>
+              </div>
+            </div>
+
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:1.5rem; margin-top:1.5rem;">
+              <div class="card">
+                <h2>Unlocks per Locker</h2>
+                <div style="height:250px; position:relative;"><canvas id="chart-locker-unlocks"></canvas></div>
+              </div>
+              <div class="card">
+                <h2>Unlock Type Share</h2>
+                <div style="height:250px; position:relative;"><canvas id="chart-type-share"></canvas></div>
+              </div>
+            </div>
+            <div class="card" style="margin-top:1.5rem;">
+              <h2>Locker Access Trends</h2>
+              <div style="height:250px; position:relative;"><canvas id="chart-access-trends"></canvas></div>
+            </div>
+          </div>
+
+          <div id="health" class="tab-content">
+            <button class="refresh-btn" onclick="refreshSystemHealth()">🔄 Refresh Health</button>
+            <div class="stat-cards" style="margin-top: 1rem;">
+              <div class="stat-card">
+                <div class="stat-card-label">MQTT Connection</div>
+                <div class="stat-card-value" id="hl-mqtt" style="font-size: 1.5rem; font-weight: 700;">—</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-card-label">Firebase Database</div>
+                <div class="stat-card-value" id="hl-firebase" style="font-size: 1.5rem; font-weight: 700;">—</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-card-label">SMS Gateway</div>
+                <div class="stat-card-value" id="hl-sms" style="font-size: 1.5rem; font-weight: 700;">—</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-card-label">Online Lockers</div>
+                <div class="stat-card-value" id="hl-online" style="color:var(--green)">0</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-card-label">Offline Lockers</div>
+                <div class="stat-card-value" id="hl-offline" style="color:var(--red)">0</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-card-label">Last Sync</div>
+                <div class="stat-card-value" id="hl-sync" style="font-size: 0.9rem; font-weight: 600;">—</div>
+              </div>
+            </div>
+            <div id="healthContent" style="margin-top: 1.5rem;"></div>
+          </div>
+        </div>
+      `;
+
+      document.getElementById('userName').textContent = currentUser;
+      document.getElementById('add-user-fields').style.display = 'none';
+      document.getElementById('notification-bell-wrapper').style.display = 'flex';
+      
+      refreshLockers();
+      refreshUsers();
+      refreshLogs();
+      refreshAlerts();
+      loadNotifications();
+      
+      if (lockerRefreshTimer) clearInterval(lockerRefreshTimer);
+      lockerRefreshTimer = setInterval(refreshLockers, 30000); // Poll dashboard state every 30s
+
+      if (notificationPollTimer) clearInterval(notificationPollTimer);
+      notificationPollTimer = setInterval(loadNotifications, 30000); // Poll notifications every 30s
+
+      // Change 2: start tamper polling
+      if (tamperPollTimer) clearInterval(tamperPollTimer);
+      tamperInitialized = false;
+      pollTamperAlerts(); // first call pre-populates seenTamperIds silently
+      tamperPollTimer = setInterval(pollTamperAlerts, 30000);
+    }
+
+    function filterLockerCards(searchText) {
+      const status = document.getElementById('status-filter')?.value || '';
+      const q = (searchText || '').toLowerCase();
+      document.querySelectorAll('.locker-card').forEach(card => {
+        const id   = (card.dataset.lockerId || '').toLowerCase();
+        const stat = (card.querySelector('.locker-status')?.textContent || '').toLowerCase();
+        const matchSearch = !q      || id.includes(q) || stat.includes(q);
+        const matchStatus = !status || stat === status.toLowerCase();
+        card.style.display = (matchSearch && matchStatus) ? '' : 'none';
+      });
+    }
+
+    function filterUserRows(searchText) {
+      const q = (searchText || '').toLowerCase();
+      document.querySelectorAll('[data-testid="user-row"]').forEach(row => {
+        const text = row.textContent.toLowerCase();
+        row.style.display = !q || text.includes(q) ? '' : 'none';
+      });
+    }
+
+    function switchTab(tabName) {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+      document.querySelector(`button[onclick="switchTab('${tabName}')"]`).classList.add('active');
+      document.getElementById(tabName).classList.add('active');
+    }
+
+    /* ════════════════════════════════════════════
+       CHANGE 2 — Tamper polling
+    ════════════════════════════════════════════ */
+    async function pollTamperAlerts() {
+      if (!authToken) return;
+      try {
+        const res = await fetch(`${API_URL}/logs?limit=5`, {
+          headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+        if (!res.ok) return;
+
+        const logs = await res.json();
+        if (!Array.isArray(logs)) return;
+
+        const fiveMinAgo = Date.now() - 5 * 60 * 1000;
+
+        logs.forEach(log => {
+          const id        = log.id || log._id || (log.lockerId + ':' + log.timestamp);
+          const isTamper  = log.eventType === 'TAMPER_ALERT';
+          const ts        = new Date(log.timestamp).getTime();
+          const isRecent  = ts > fiveMinAgo;
+          const isNew     = !seenTamperIds.has(id);
+
+          seenTamperIds.add(id);
+
+          if (isNew && isTamper && isRecent && tamperInitialized) {
+            showTamperBanner(log);
+          }
+        });
+
+        tamperInitialized = true;
+      } catch (_) {
+        // silent — poll failure should not break the UI
+      }
+    }
+
+    function timeAgo(timestamp) {
+      const diff = Math.floor((Date.now() - new Date(timestamp).getTime()) / 1000);
+      if (diff < 60)   return `${diff}s ago`;
+      if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+      return `${Math.floor(diff / 3600)}h ago`;
+    }
+
+    function showTamperBanner(log) {
+      const container = document.getElementById('tamperBanners');
+      const div = document.createElement('div');
+      div.className = 'tamper-banner';
+      div.innerHTML = `
+        <span>⚠ Tamper detected on <strong>${log.lockerId || 'unknown'}</strong> — ${timeAgo(log.timestamp)}</span>
+        <button class="tamper-banner-dismiss" onclick="this.parentElement.remove()" aria-label="Dismiss">✕</button>
+      `;
+      container.appendChild(div);
+    }
+
+    /* ════════════════════════════════════════════
+       LOCKERS (includes Change 3 & 7)
+    ════════════════════════════════════════════ */
+    async function refreshLockers() {
+      const content = document.getElementById('lockersContent');
+      if (!content) return;
+      content.innerHTML = '<div class="loading"><div class="spinner"></div> Loading lockers...</div>';
+
+      try {
+        const [response, usersResponse, logsResponse] = await Promise.all([
+          fetch(`${API_URL}/lockers`, { headers: { 'Authorization': `Bearer ${authToken}` } }),
+          fetch(`${API_URL}/users`,   { headers: { 'Authorization': `Bearer ${authToken}` } }),
+          fetch(`${API_URL}/logs`,    { headers: { 'Authorization': `Bearer ${authToken}` } })
+        ]);
+
+        if (response.status === 401 || usersResponse.status === 401 || logsResponse.status === 401) { logout(); return; }
+
+        if (logsResponse.ok) {
+          const rawLogs = await logsResponse.json();
+          allLogsData = Array.isArray(rawLogs) ? rawLogs : [];
+        }
+
+        const raw = await response.json();
+        // API returns either an array or a keyed object {locker_01: {...}, ...}
+        let lockers;
+        if (Array.isArray(raw)) {
+          lockers = raw;
+        } else if (raw && typeof raw === 'object') {
+          lockers = Object.entries(raw).map(([id, obj]) => ({ id, ...obj }));
+        } else {
+          lockers = [];
+        }
+
+        // Join sanitized assignedUser keys to the original slashed studentId and name
+        let studentInfoByKey = {};
+        let registeredUsersCount = 0;
+        if (usersResponse.ok) {
+          const rawUsers = await usersResponse.json();
+          if (rawUsers && typeof rawUsers === 'object' && !Array.isArray(rawUsers)) {
+            const userKeys = Object.keys(rawUsers);
+            registeredUsersCount = userKeys.length;
+            userKeys.forEach(key => {
+              const u = rawUsers[key];
+              studentInfoByKey[key] = {
+                studentId: (u && u.studentId) || key,
+                name: (u && u.name) || 'Unknown'
+              };
+            });
+          }
+        }
+
+        // Stat cards calculations
+        const total    = lockers.length;
+        const occupied = lockers.filter(l => l.assignedTo || l.userId || l.assignedUser).length;
+        const alertCnt = lockers.filter(l => l.status === 'alert' || l.status === 'tamper').length;
+        const utilPct  = total > 0 ? Math.round(occupied / total * 100) : 0;
+        const available = total - occupied - alertCnt;
+
+        // Calculate unlocks today and failed attempts today from cache
+        const todayStr = new Date().toDateString();
+        const unlocksToday = allLogsData.filter(l => 
+          new Date(l.timestamp).toDateString() === todayStr &&
+          ['OTP_UNLOCK', 'PIN_UNLOCK', 'ADMIN_UNLOCK'].includes(l.eventType) &&
+          l.status === 'SUCCESS'
+        ).length;
+
+        const failedToday = allLogsData.filter(l =>
+          new Date(l.timestamp).toDateString() === todayStr &&
+          ['OTP_FAILED', 'PIN_FAILED'].includes(l.eventType)
+        ).length;
+
+        const sv = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+        sv('sv-total',    total);
+        sv('sv-occupied', `${occupied} (${utilPct}%)`);
+        sv('sv-available', Math.max(0, available));
+        sv('sv-alerts',   alertCnt);
+        sv('sv-users',    registeredUsersCount);
+        sv('sv-unlocks-today', unlocksToday);
+        sv('sv-failed-today',  failedToday);
+
+        allLockersData = lockers;
+        populateLockerDropdowns(lockers);
+
+        let html = '<div class="locker-grid" id="locker-grid" data-testid="locker-grid" role="list">';
+        lockers.forEach(locker => {
+          const status      = locker.status || 'locked';
+          const statusClass = status === 'locked' ? 'status-locked' :
+                              status === 'unlocked' ? 'status-unlocked' : 'status-alert';
+          const statusText  = status.charAt(0).toUpperCase() + status.slice(1);
+          
+          const assignedKey = locker.assignedTo || locker.userId || locker.assignedUser || '';
+          const studentInfo = assignedKey ? studentInfoByKey[assignedKey] : null;
+          const assigned    = studentInfo ? `${studentInfo.name} (${studentInfo.studentId})` : 'Unassigned';
+
+          // Determine online status
+          const lastSeen = locker.lastSeen || 0;
+          const online = lastSeen ? (Date.now() - lastSeen < 90000) : false;
+          const onlineClass = online ? 'status-dot-green' : 'status-dot-red';
+          const onlineText = online ? 'Online' : 'Offline';
+
+          // Find the last access time from allLogsData
+          const lockerLogs = allLogsData.filter(log => log.lockerId === locker.id);
+          const lastAccess = lockerLogs.length > 0 ? new Date(lockerLogs[0].timestamp).toLocaleString() : 'Never';
+
+          // Door state and tamper status
+          const doorText = (locker.doorState || 'closed').toUpperCase();
+          const tamperText = (status === 'tamper' || status === 'alert') ? '⚠️ TAMPER' : 'Secure';
+          const tamperColor = (status === 'tamper' || status === 'alert') ? 'var(--red)' : 'var(--green)';
+
+          html += `
+            <div class="locker-card" id="locker-card-${locker.id}" data-testid="locker-card" data-locker-id="${locker.id}" role="listitem">
+              <div class="locker-id" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;">
+                <span>Locker ${locker.id}</span>
+                <span style="font-size: 0.8rem; font-weight: 500; display:flex; align-items:center; gap:0.25rem;">
+                  <span class="status-dot ${onlineClass}"></span> ${onlineText}
+                </span>
+              </div>
+              <div class="locker-status ${statusClass}">${statusText}</div>
+              <div class="locker-info">
+                <strong>Assigned user:</strong> ${assigned}<br>
+                <strong>Door state:</strong> ${doorText}<br>
+                <strong>Battery:</strong> ${locker.battery || 100}%<br>
+                <strong>Tamper status:</strong> <span style="color:${tamperColor};font-weight:600;">${tamperText}</span><br>
+                <strong>Last heartbeat:</strong> ${lastSeen ? timeAgo(lastSeen) : 'N/A'}<br>
+                <strong>Last access time:</strong> ${lastAccess}
+              </div>
+              <div class="locker-buttons">
+                <button class="btn-small btn-lock"
+                  aria-label="Lock ${locker.id}"
+                  data-testid="lock-btn"
+                  data-action="lock" data-locker="${locker.id}"
+                  onclick="controlLocker('${locker.id}','lock')">Lock</button>
+                <button class="btn-small btn-unlock"
+                  aria-label="Unlock ${locker.id}"
+                  data-testid="unlock-btn"
+                  data-action="unlock" data-locker="${locker.id}"
+                  onclick="controlLocker('${locker.id}','unlock')">Unlock</button>
+                <button class="btn-small btn-assign"
+                  aria-label="Assign ${locker.id}"
+                  data-testid="assign-btn"
+                  data-action="assign" data-locker="${locker.id}"
+                  onclick="openAssignModal('${locker.id}')">Assign</button>
+                <button class="btn-small btn-unassign"
+                  aria-label="Remove Assignment ${locker.id}"
+                  data-testid="unassign-btn"
+                  data-action="unassign" data-locker="${locker.id}"
+                  onclick="unassignLocker('${locker.id}')">Remove Assignment</button>
+                <button class="btn-small btn-secondary"
+                  aria-label="History ${locker.id}"
+                  data-testid="history-btn"
+                  onclick="openLockerHistoryModal('${locker.id}')">History</button>
+              </div>
+            </div>
+          `;
+        });
+        html += '</div>';
+        content.innerHTML = html;
+
+        // Readiness sentinel — Playwright waitForSelector requires a *visible* element.
+        // Use opacity:0 (not display:none) so it exists in layout but is invisible to users.
+        const lockersReady = document.createElement('span');
+        lockersReady.setAttribute('data-testid', 'lockers-ready');
+        lockersReady.setAttribute('aria-hidden', 'true');
+        lockersReady.style.cssText = 'opacity:0;position:absolute;pointer-events:none;user-select:none;font-size:1px;';
+        lockersReady.textContent = 'ready';
+        content.appendChild(lockersReady);
+
+        // Scroll locker grid into viewport so buttons are reachable by Playwright click
+        document.querySelector('[data-testid="locker-grid"]')?.scrollIntoView({ behavior: 'instant' });
+
+      } catch (error) {
+        content.innerHTML = `<div class="alert alert-error">Error loading lockers: ${error.message}</div>`;
+      }
+    }
+
+    // Change 3: assign modal
+    function openAssignModal(lockerId) {
+      const portal = document.getElementById('assignModalPortal');
+      portal.innerHTML = `
+        <div class="modal-overlay" id="assign-modal" data-testid="assign-modal" onclick="maybeCloseAssignModal(event)">
+          <div class="modal-card">
+            <h3>Assign Locker ${lockerId}</h3>
+            <div class="form-group">
+              <label for="assign-student-id">Student ID</label>
+              <input type="text" id="assign-student-id"
+                aria-label="Student ID"
+                data-testid="assign-student-id"
+                placeholder="Enter student ID" autofocus>
+            </div>
+            <div id="assignError" role="alert"></div>
+            <div class="modal-actions">
+              <button class="btn-cancel"
+                id="assign-cancel-btn"
+                aria-label="Cancel assignment"
+                data-testid="assign-cancel-btn"
+                onclick="closeAssignModal()">Cancel</button>
+              <button class="btn-primary"
+                id="assign-confirm-btn"
+                style="width:auto;padding:0.5rem 1.2rem;"
+                aria-label="Confirm assignment"
+                data-testid="assign-confirm-btn"
+                onclick="confirmAssign('${lockerId}')">Confirm</button>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function maybeCloseAssignModal(e) {
+      if (e.target.id === 'assign-modal') closeAssignModal();
+    }
+
+    function closeAssignModal() {
+      document.getElementById('assignModalPortal').innerHTML = '';
+    }
+
+    async function confirmAssign(lockerId) {
+      const studentId = (document.getElementById('assign-student-id').value || '').trim();
+      if (!studentId) {
+        document.getElementById('assignError').innerHTML = `<div class="alert alert-error">Please enter a Student ID</div>`;
+        return;
+      }
+      try {
+        const response = await fetch(`${API_URL}/lockers/${lockerId}/command`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` },
+          body: JSON.stringify({ action: 'assign', userId: studentId })
+        });
+        if (handleUnauthorized(response)) return;
+        if (response.ok) {
+          closeAssignModal();
+          setTimeout(refreshLockers, 400);
+        } else {
+          const data = await response.json().catch(() => ({}));
+          document.getElementById('assignError').innerHTML = `<div class="alert alert-error">${data.message || 'Assignment failed'}</div>`;
+        }
+      } catch (err) {
+        document.getElementById('assignError').innerHTML = `<div class="alert alert-error">${err.message}</div>`;
+      }
+    }
+
+    async function unassignLocker(lockerId) {
+      try {
+        const response = await fetch(`${API_URL}/lockers/${lockerId}/command`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` },
+          body: JSON.stringify({ action: 'unassign' })
+        });
+        if (handleUnauthorized(response)) return;
+        if (response.ok) {
+          // Optimistically remove the "Assigned to" line from the info panel
+          const card = document.getElementById(`locker-card-${lockerId}`);
+          if (card) {
+            const info = card.querySelector('.locker-info');
+            if (info) {
+              const assignedLine = info.querySelector('br + strong');
+              if (assignedLine && assignedLine.textContent.startsWith('Assigned')) {
+                assignedLine.parentNode.removeChild(assignedLine.nextSibling);
+                assignedLine.parentNode.removeChild(assignedLine.previousSibling);
+                assignedLine.parentNode.removeChild(assignedLine);
+              }
+            }
+          }
+          setTimeout(refreshLockers, 400);
+        } else {
+          alert('Error removing assignment');
+        }
+      } catch (err) {
+        alert('Error: ' + err.message);
+      }
+    }
+
+    function patchLockerCard(lockerId, newStatus) {
+      const card = document.getElementById(`locker-card-${lockerId}`);
+      if (!card) return;
+      const statusEl = card.querySelector('.locker-status');
+      if (statusEl) {
+        statusEl.className = `locker-status ${newStatus === 'locked' ? 'status-locked' : newStatus === 'unlocked' ? 'status-unlocked' : 'status-alert'}`;
+        statusEl.textContent = newStatus.charAt(0).toUpperCase() + newStatus.slice(1);
+      }
+    }
+
+    async function controlLocker(lockerId, action) {
+      const btn = event.target;
+      btn.disabled = true;
+      try {
+        const response = await fetch(`${API_URL}/lockers/${lockerId}/command`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` },
+          body: JSON.stringify({ action })
+        });
+        if (handleUnauthorized(response)) return;
+        if (response.ok) {
+          if (action === 'lock' || action === 'unlock') {
+            patchLockerCard(lockerId, action === 'lock' ? 'locked' : 'unlocked');
+          }
+          setTimeout(refreshLockers, 400);
+        } else {
+          alert('Error controlling locker');
+          btn.disabled = false;
+        }
+      } catch (error) {
+        alert('Error: ' + error.message);
+        btn.disabled = false;
+      }
+    }
+
+    /* ════════════════════════════════════════════
+       USERS (includes Change 4)
+    ════════════════════════════════════════════ */
+    async function refreshUsers() {
+      const content = document.getElementById('usersContent');
+      if (!content) return;
+      content.innerHTML = '<div class="loading"><div class="spinner"></div> Loading users...</div>';
+
+      try {
+        const response = await fetch(`${API_URL}/users`, {
+          headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+
+        if (response.status === 401) { logout(); return; }
+
+        const raw = await response.json();
+        // API returns either an array or a keyed object {studentKey: {...}, ...}
+        let users;
+        if (Array.isArray(raw)) {
+          users = raw;
+        } else if (raw && typeof raw === 'object') {
+          users = Object.entries(raw).map(([id, obj]) => ({ id, ...obj }));
+        } else {
+          users = [];
+        }
+        allUsersData = users; // cache users
+
+        if (users.length === 0) {
+          content.innerHTML = '<div class="empty-state"><h3>No users found</h3></div>';
+          return;
+        }
+
+        const safeName = n => (n || 'user').replace(/'/g, "\\'");
+
+        let html = `
+          <div class="table-container">
+            <table id="users-table" data-testid="users-table">
+              <thead>
+                <tr>
+                  <th>USER</th>
+                  <th>STUDENT ID</th>
+                  <th>PHONE</th>
+                  <th>LOCKER</th>
+                  <th>JOINED</th>
+                  <th>STATUS</th>
+                  <th>ACTIONS</th>
+                </tr>
+              </thead>
+              <tbody>
+        `;
+
+        users.forEach(user => {
+          const isSuspended = user.status === 'suspended';
+          const dotClass    = isSuspended ? 'status-dot-red' : 'status-dot-green';
+          const statusLabel = isSuspended ? 'Suspended' : (user.status ? user.status.charAt(0).toUpperCase() + user.status.slice(1) : 'Active');
+          const displayName = user.name || user.studentId || user.id || 'user';
+          const joined      = user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A';
+
+          html += `
+            <tr data-user-id="${user.id}" data-testid="user-row">
+              <td>${user.name      || 'N/A'}</td>
+              <td>${user.studentId || user.id || 'N/A'}</td>
+              <td>${user.phone     || 'N/A'}</td>
+              <td>${user.lockerId  || user.locker || 'N/A'}</td>
+              <td>${joined}</td>
+              <td><span class="status-dot ${dotClass}"></span>${statusLabel}</td>
+              <td>
+                <div class="action-buttons">
+                  <button class="btn-activate" aria-label="Edit ${displayName}" onclick="openEditUserModal('${user.id}')">Edit</button>
+                  <button class="btn-delete" data-testid="remove-user-btn" aria-label="Remove ${displayName}" onclick="deleteUser('${user.id}')">Remove</button>
+                </div>
+              </td>
+            </tr>
+          `;
+        });
+
+        html += '</tbody></table></div>';
+        content.innerHTML = html;
+
+        // Readiness sentinel — opacity:0 so Playwright can find it but users can't see it
+        const usersReady = document.createElement('span');
+        usersReady.setAttribute('data-testid', 'users-ready');
+        usersReady.setAttribute('aria-hidden', 'true');
+        usersReady.style.cssText = 'opacity:0;position:absolute;pointer-events:none;user-select:none;font-size:1px;';
+        usersReady.textContent = 'ready';
+        content.appendChild(usersReady);
+
+      } catch (error) {
+        content.innerHTML = `<div class="alert alert-error">Error loading users: ${error.message}</div>`;
+      }
+    }
+
+    async function handleAddUser(e) {
+      e.preventDefault();
+      const name      = document.getElementById('newUserName').value.trim();
+      const studentId = document.getElementById('newUserId').value.trim();
+      const phone     = document.getElementById('newUserPhone').value.trim();
+      const lockerId  = document.getElementById('newUserLocker').value.trim();
+      const pin       = document.getElementById('newUserPin').value.trim();
+      const errEl     = document.getElementById('add-user-error');
+
+      errEl.innerHTML = '';
+      try {
+        const response = await fetch(`${API_URL}/users`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` },
+          body: JSON.stringify({ name, studentId, phone, lockerId, pin })
+        });
+        if (handleUnauthorized(response)) return;
+        if (response.ok) {
+          document.getElementById('newUserName').value   = '';
+          document.getElementById('newUserId').value     = '';
+          document.getElementById('newUserPhone').value  = '';
+          document.getElementById('newUserLocker').value = '';
+          document.getElementById('newUserPin').value    = '';
+          document.getElementById('add-user-fields').style.display = 'none';
+          refreshUsers();
+        } else {
+          const data = await response.json().catch(() => ({}));
+          errEl.innerHTML = `<div class="alert alert-error">${data.message || 'Error adding user'}</div>`;
+        }
+      } catch (error) {
+        errEl.innerHTML = `<div class="alert alert-error">Error: ${error.message}</div>`;
+      }
+    }
+
+    async function deleteUser(userId) {
+      if (!confirm('Are you sure you want to delete this user?')) return;
+      try {
+        const response = await fetch(`${API_URL}/users/${userId}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+        if (handleUnauthorized(response)) return;
+        if (response.ok) {
+          refreshUsers();
+          alert('User deleted successfully');
+        } else {
+          alert('Error deleting user');
+        }
+      } catch (error) {
+        alert('Error: ' + error.message);
+      }
+    }
+
+    let currentLogsPage = 1;
+    const logsPerPage = 10;
+    let currentlyFilteredLogs = [];
+
+    async function refreshLogs() {
+      const content = document.getElementById('logsContent');
+      if (!content) return;
+      content.innerHTML = '<div class="loading"><div class="spinner"></div> Loading logs...</div>';
+
+      try {
+        const response = await fetch(`${API_URL}/logs`, {
+          headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+
+        if (response.status === 401) { logout(); return; }
+
+        const logs = await response.json();
+        allLogsData = Array.isArray(logs) ? logs : [];
+
+        // Clear date filters on full refresh
+        const fromEl = document.getElementById('log-from-date');
+        const toEl   = document.getElementById('log-to-date');
+        if (fromEl) fromEl.value = '';
+        if (toEl)   toEl.value   = '';
+        
+        const searchEl = document.getElementById('log-search');
+        if (searchEl) searchEl.value = '';
+
+        const eventEl = document.getElementById('log-event-filter');
+        if (eventEl) eventEl.value = '';
+
+        const statusEl = document.getElementById('log-status-filter');
+        if (statusEl) statusEl.value = '';
+
+        currentlyFilteredLogs = allLogsData;
+        currentLogsPage = 1;
+        renderLogsPage();
+      } catch (error) {
+        const content2 = document.getElementById('logsContent');
+        if (content2) content2.innerHTML = `<div class="alert alert-error">Error loading logs: ${error.message}</div>`;
+      }
+    }
+
+    function applyLogFilter() {
+      const fromVal   = document.getElementById('log-from-date')?.value  || '';
+      const toVal     = document.getElementById('log-to-date')?.value    || '';
+      const searchVal = (document.getElementById('log-search')?.value    || '').toLowerCase();
+      const eventVal  = document.getElementById('log-event-filter')?.value || '';
+      const statusVal = document.getElementById('log-status-filter')?.value || '';
+
+      let filtered = allLogsData;
+      if (fromVal) {
+        const from = new Date(fromVal + 'T00:00:00');
+        filtered = filtered.filter(l => new Date(l.timestamp) >= from);
+      }
+      if (toVal) {
+        const to = new Date(toVal + 'T23:59:59.999');
+        filtered = filtered.filter(l => new Date(l.timestamp) <= to);
+      }
+      if (eventVal) {
+        filtered = filtered.filter(l => (l.eventType || '').toUpperCase() === eventVal.toUpperCase());
+      }
+      if (statusVal) {
+        filtered = filtered.filter(l => (l.status || '').toUpperCase().includes(statusVal.toUpperCase()));
+      }
+      if (searchVal) {
+        filtered = filtered.filter(l =>
+          (l.userId    || '').toLowerCase().includes(searchVal) ||
+          (l.lockerId  || '').toLowerCase().includes(searchVal) ||
+          (l.details   || '').toLowerCase().includes(searchVal) ||
+          (l.description || '').toLowerCase().includes(searchVal)
+        );
+      }
+      
+      currentLogsPage = 1;
+      currentlyFilteredLogs = filtered;
+      renderLogsPage();
+    }
+
+    function renderLogsPage() {
+      const content = document.getElementById('logsContent');
+      const pagEl = document.getElementById('logsPagination');
+      if (!content || !pagEl) return;
+      
+      const logs = currentlyFilteredLogs;
+      if (!logs || logs.length === 0) {
+        content.innerHTML = '<div class="empty-state"><h3>No logs available</h3></div>';
+        pagEl.innerHTML = '';
+        return;
+      }
+
+      const totalPages = Math.ceil(logs.length / logsPerPage);
+      const paginated = logs.slice((currentLogsPage - 1) * logsPerPage, currentLogsPage * logsPerPage);
+
+      const icons = {
+        'OTP_REQUEST': '📱',
+        'OTP_UNLOCK': '🔓📱',
+        'PIN_UNLOCK': '🔓🔑',
+        'ADMIN_UNLOCK': '🔓👑',
+        'ADMIN_LOCK': '🔒👑',
+        'ASSIGN': '👤🔒',
+        'UNASSIGN': '❌👤',
+        'TAMPER_ALERT': '🚨',
+        'USSD_REQUEST': '📞',
+        'USSD_OTP_GENERATED': '📱📞',
+        'USER_CREATE': '➕👤',
+        'USER_DELETE': '➖👤'
+      };
+
+      let html = `
+        <div class="table-container">
+          <table id="log-table" data-testid="log-table">
+            <thead>
+              <tr>
+                <th>Icon</th>
+                <th>Timestamp</th>
+                <th>User</th>
+                <th>Action</th>
+                <th>Locker</th>
+                <th>Status</th>
+                <th>Details</th>
+              </tr>
+            </thead>
+            <tbody>
+      `;
+
+      paginated.forEach(log => {
+        const ts = new Date(log.timestamp).toLocaleString();
+        const icon = icons[log.eventType] || '📄';
+        let statusStyle = '';
+        if (log.status === 'SUCCESS') statusStyle = 'color:var(--green); font-weight:600;';
+        else if (log.status === 'FAILED') statusStyle = 'color:var(--orange); font-weight:600;';
+        else if (log.status === 'ALERT' || log.status === 'LOCKED_OUT') statusStyle = 'color:var(--red); font-weight:700;';
+
+        const detailsText = log.details || log.description || log.status || 'N/A';
+
+        html += `
+          <tr>
+            <td style="font-size:1.2rem; text-align:center;">${icon}</td>
+            <td>${ts}</td>
+            <td>${log.userId    || 'System'}</td>
+            <td><strong>${log.eventType || 'N/A'}</strong></td>
+            <td>${log.lockerId  || 'N/A'}</td>
+            <td style="${statusStyle}">${log.status || 'N/A'}</td>
+            <td>${detailsText}</td>
+          </tr>
+        `;
+      });
+
+      html += '</tbody></table></div>';
+      content.innerHTML = html;
+
+      // Pagination controls
+      pagEl.innerHTML = `
+        <div class="pagination-container">
+          <div style="font-size:0.85rem; color:var(--muted);">
+            Showing ${Math.min(logs.length, (currentLogsPage - 1) * logsPerPage + 1)}-${Math.min(logs.length, currentLogsPage * logsPerPage)} of ${logs.length} logs
+          </div>
+          <div style="display:flex; gap:0.5rem;">
+            <button class="pagination-btn" onclick="changeLogsPage(1)" ${currentLogsPage === 1 ? 'disabled' : ''}>« First</button>
+            <button class="pagination-btn" onclick="changeLogsPage(${currentLogsPage - 1})" ${currentLogsPage === 1 ? 'disabled' : ''}>‹ Prev</button>
+            <span style="display:flex; align-items:center; padding:0 0.5rem; font-size:0.85rem; font-weight:600;">Page ${currentLogsPage} of ${totalPages}</span>
+            <button class="pagination-btn" onclick="changeLogsPage(${currentLogsPage + 1})" ${currentLogsPage === totalPages ? 'disabled' : ''}>Next ›</button>
+            <button class="pagination-btn" onclick="changeLogsPage(${totalPages})" ${currentLogsPage === totalPages ? 'disabled' : ''}>Last »</button>
+          </div>
+        </div>
+      `;
+    }
+
+    function changeLogsPage(page) {
+      currentLogsPage = page;
+      renderLogsPage();
+    }
+
+    function exportLogsCSV() {
+      const escape = v => `"${String(v == null ? '' : v).replace(/"/g, '""')}"`;
+      
+      const headers = ['Timestamp', 'Event', 'Locker', 'User', 'Status', 'Details'].map(escape).join(',');
+      const rows = currentlyFilteredLogs.map(l => [
+        new Date(l.timestamp).toLocaleString(),
+        l.eventType || '',
+        l.lockerId  || '',
+        l.userId    || 'System',
+        l.status    || '',
+        l.details   || l.description || ''
+      ].map(escape).join(',')).join('\n');
+
+      const blob = new Blob([headers + '\n' + rows], { type: 'text/csv;charset=utf-8;' });
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement('a');
+      a.href     = url;
+      a.download = `hifadhi-audit-log-${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    function exportLogsPDF() {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      
+      doc.setFontSize(16);
+      doc.text('Hifadhi Smart Locker System - Audit Logs', 14, 20);
+      doc.setFontSize(9);
+      doc.text(`Generated on: ${new Date().toLocaleString()}`, 14, 27);
+      doc.text(`Exported Count: ${currentlyFilteredLogs.length} logs`, 14, 32);
+
+      const tableRows = [];
+      currentlyFilteredLogs.forEach(log => {
+        tableRows.push([
+          new Date(log.timestamp).toLocaleString(),
+          log.userId || 'System',
+          log.eventType || 'N/A',
+          log.lockerId || 'N/A',
+          log.status || 'N/A',
+          log.details || log.description || ''
+        ]);
+      });
+
+      doc.autoTable({
+        head: [['Timestamp', 'User', 'Action', 'Locker', 'Status', 'Details']],
+        body: tableRows,
+        startY: 38,
+        theme: 'striped',
+        headStyles: { fillColor: [29, 78, 216] }, // Navy primary theme color
+        styles: { fontSize: 7.5, cellPadding: 2 }
+      });
+
+      doc.save(`hifadhi_audit_logs_${Date.now()}.pdf`);
+    }
+
+    /* ════════════════════════════════════════════
+       TAMPER ALERTS TAB
+    ════════════════════════════════════════════ */
+    async function refreshAlerts() {
+      const content = document.getElementById('alertsContent');
+      if (!content) return;
+      content.innerHTML = '<div class="loading"><div class="spinner"></div> Checking for alerts...</div>';
+
+      try {
+        const response = await fetch(`${API_URL}/logs`, {
+          headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+
+        if (response.status === 401) { logout(); return; }
+
+        const logs   = await response.json();
+        const alerts = Array.isArray(logs)
+          ? logs.filter(l => l.eventType === 'TAMPER_ALERT')
+          : [];
+
+        if (alerts.length === 0) {
+          content.innerHTML = '<div class="empty-state"><h3>✓ No tamper alerts</h3><p>All lockers are secure</p></div>';
+          return;
+        }
+
+        let html = '<div class="tamper-alerts" style="display:grid; gap:1.25rem;">';
+        alerts.forEach(a => {
+          const time = new Date(a.timestamp).toLocaleString();
+          const isAlert = a.status === 'ALERT';
+          const isAck = a.status === 'ACKNOWLEDGED';
+          const isResolved = a.status === 'RESOLVED';
+          
+          let severityBadge = '<span style="background:#FEE2E2; color:#991B1B; padding:0.25rem 0.5rem; border-radius:6px; font-size:0.75rem; font-weight:700; margin-left:0.5rem; border:1px solid #F87171;">CRITICAL</span>';
+          let statusBadge = '';
+          if (isAlert) statusBadge = '<span style="background:#FEF3C7; color:#92400E; padding:0.25rem 0.5rem; border-radius:6px; font-size:0.75rem; font-weight:700; margin-left:0.5rem; border:1px solid #FBBF24;">NEW</span>';
+          else if (isAck) statusBadge = '<span style="background:#DBEAFE; color:#1E40AF; padding:0.25rem 0.5rem; border-radius:6px; font-size:0.75rem; font-weight:700; margin-left:0.5rem; border:1px solid #60A5FA;">ACKNOWLEDGED</span>';
+          else if (isResolved) statusBadge = '<span style="background:#D1FAE5; color:#065F46; padding:0.25rem 0.5rem; border-radius:6px; font-size:0.75rem; font-weight:700; margin-left:0.5rem; border:1px solid #34D399;">RESOLVED</span>';
+
+          html += `
+            <div class="card" style="border-left: 5px solid ${isResolved ? 'var(--green)' : 'var(--danger)'}; padding: 1.25rem; margin-bottom: 0px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); background:var(--surface);">
+              <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:1.25rem;">
+                <div style="flex:1; min-width:240px;">
+                  <h3 style="margin:0 0 0.5rem 0; display:flex; align-items:center; font-size:1.05rem; flex-wrap:wrap; gap:0.35rem;">
+                    🚨 Tamper Alert - Locker ${a.lockerId || 'N/A'}
+                    ${severityBadge}
+                    ${statusBadge}
+                  </h3>
+                  <p style="margin:0.5rem 0; color:var(--text); font-size:0.92rem; font-weight:600;">Description: ${a.description || a.details || 'Suspicious keypad activity detected.'}</p>
+                  
+                  <div style="font-size:0.85rem; color:var(--text); margin-top:0.5rem; display:grid; grid-template-columns: 140px 1fr; gap:0.25rem 0.5rem;">
+                    <span style="color:var(--muted); font-weight:600;">Severity:</span> <span>CRITICAL</span>
+                    <span style="color:var(--muted); font-weight:600;">Locker ID:</span> <span>${a.lockerId || 'N/A'}</span>
+                    <span style="color:var(--muted); font-weight:600;">Acknowledged Status:</span> <span>${(isAck || isResolved) ? '✅ Yes' : '❌ No'}</span>
+                    <span style="color:var(--muted); font-weight:600;">Resolved Status:</span> <span>${isResolved ? '✅ Yes' : '❌ No'}</span>
+                    <span style="color:var(--muted); font-weight:600;">Detected Time:</span> <span>${time}</span>
+                  </div>
+                </div>
+                
+                <div style="display:flex; flex-direction:column; gap:0.5rem; min-width:220px; max-width:320px; width:100%;">
+                  ${isAlert ? `
+                    <button class="btn-secondary" style="padding:0.45rem 0.8rem; font-size:0.85rem; background:var(--primary); width:100%;" onclick="acknowledgeAlert('${a.id}')">Acknowledge</button>
+                  ` : ''}
+                  
+                  ${!isResolved ? `
+                    <textarea id="res-notes-${a.id}" placeholder="Enter resolution notes..." style="width:100%; height:55px; font-size:0.85rem; padding:0.4rem; border:1px solid var(--border); border-radius:6px; background:var(--canvas); margin-top:0.25rem; resize:none; color:var(--text);">${a.resolutionNotes || ''}</textarea>
+                    <button class="btn-export" style="padding:0.45rem 0.8rem; font-size:0.85rem; width:100%;" onclick="resolveAlert('${a.id}')">Resolve Alert</button>
+                  ` : `
+                    <div style="background:var(--canvas); padding:0.6rem; border-radius:6px; font-size:0.85rem; border:1px solid var(--border); width:100%;">
+                      <strong>Resolution Notes:</strong>
+                      <p style="margin:0.2rem 0 0 0; color:var(--gray-600); font-style:italic;">${a.resolutionNotes || 'None'}</p>
+                    </div>
+                  `}
+                </div>
+              </div>
+            </div>
+          `;
+        });
+        html += '</div>';
+        content.innerHTML = html;
+
+      } catch (error) {
+        const c = document.getElementById('alertsContent');
+        if (c) c.innerHTML = `<div class="alert alert-error">Error loading alerts: ${error.message}</div>`;
+      }
+    }
+
+    async function acknowledgeAlert(id) {
+      try {
+        const r = await fetch(`${API_URL}/logs/${id}/acknowledge`, {
+          method: 'PUT',
+          headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+        if (r.ok) {
+          refreshAlerts();
+        } else {
+          alert('Failed to acknowledge alert.');
+        }
+      } catch (e) {
+        alert(`Error: ${e.message}`);
+      }
+    }
+
+    async function resolveAlert(id) {
+      const notes = document.getElementById(`res-notes-${id}`).value.trim();
+      if (!notes) {
+        alert('Please enter resolution notes before resolving.');
+        return;
+      }
+      try {
+        const r = await fetch(`${API_URL}/logs/${id}/resolve`, {
+          method: 'PUT',
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${authToken}` 
+          },
+          body: JSON.stringify({ notes })
+        });
+        if (r.ok) {
+          refreshAlerts();
+          refreshLockers();
+        } else {
+          alert('Failed to resolve alert.');
+        }
+      } catch (e) {
+        alert(`Error: ${e.message}`);
+      }
+    }
+
+    /* ════════════════════════════════════════════
+       GLOBAL CHART INSTANCES & TAB SWITCHER
+    ════════════════════════════════════════════ */
+    let lockerUnlocksChartInstance = null;
+    let typeShareChartInstance = null;
+    let accessTrendsChartInstance = null;
+
+    function switchTab(tabName) {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+      
+      // Match active class by selecting buttons calling switchTab with this name
+      const activeBtn = document.querySelector(`button[onclick="switchTab('${tabName}')"]`);
+      if (activeBtn) activeBtn.classList.add('active');
+      const activeTab = document.getElementById(tabName);
+      if (activeTab) activeTab.classList.add('active');
+
+      if (tabName === 'health') {
+        refreshSystemHealth();
+      } else if (tabName === 'analytics') {
+        calculateAnalytics();
+      }
+    }
+
+    /* ════════════════════════════════════════════
+       EDIT USER MODAL
+    ════════════════════════════════════════════ */
+    function openEditUserModal(userId) {
+      const user = allUsersData.find(u => u.id === userId);
+      if (!user) return;
+      const portal = document.getElementById('assignModalPortal');
+      portal.innerHTML = `
+        <div class="modal-overlay" id="edit-user-modal" onclick="maybeCloseEditUserModal(event)">
+          <div class="modal-card" style="max-width: 450px;">
+            <h3>Edit User</h3>
+            <div id="editUserError"></div>
+            <div class="form-group">
+              <label for="edit-user-name">Full Name</label>
+              <input type="text" id="edit-user-name" value="${(user.name || '').replace(/"/g, '&quot;')}">
+            </div>
+            <div class="form-group">
+              <label for="edit-user-sid">Student ID</label>
+              <input type="text" id="edit-user-sid" value="${(user.studentId || user.id || '').replace(/"/g, '&quot;')}">
+            </div>
+            <div class="form-group">
+              <label for="edit-user-phone">Phone</label>
+              <input type="tel" id="edit-user-phone" value="${(user.phone || '').replace(/"/g, '&quot;')}">
+            </div>
+            <div class="form-group">
+              <label for="edit-user-locker">Locker ID</label>
+              <select id="edit-user-locker" style="padding:0.45rem 0.7rem;border:1px solid var(--gray-300);border-radius:4px;font-size:0.9rem;width:100%;"></select>
+            </div>
+            <div class="form-group">
+              <label for="edit-user-pin">New PIN (Optional, 4 digits)</label>
+              <input type="password" id="edit-user-pin" maxlength="4" placeholder="Leave blank to keep unchanged">
+            </div>
+            <div class="modal-actions">
+              <button class="btn-cancel" onclick="closeEditUserModal()">Cancel</button>
+              <button class="btn-primary" style="width:auto;padding:0.5rem 1.2rem;" onclick="confirmEditUser('${userId}')">Save</button>
+            </div>
+          </div>
+        </div>
+      `;
+
+      // Populate edit locker dropdown
+      const selectEl = document.getElementById('edit-user-locker');
+      const available = allLockersData.filter(l => !l.assignedTo && !l.userId && !l.assignedUser || l.id === user.lockerId);
+      selectEl.innerHTML = available.map(l => `
+        <option value="${l.id}" ${l.id === user.lockerId ? 'selected' : ''}>${l.id}</option>
+      `).join('');
+    }
+
+    function maybeCloseEditUserModal(e) {
+      if (e.target.id === 'edit-user-modal') closeEditUserModal();
+    }
+
+    function closeEditUserModal() {
+      document.getElementById('assignModalPortal').innerHTML = '';
+    }
+
+    async function confirmEditUser(oldUserId) {
+      const name = document.getElementById('edit-user-name').value.trim();
+      const userId = document.getElementById('edit-user-sid').value.trim();
+      const phone = document.getElementById('edit-user-phone').value.trim();
+      const lockerId = document.getElementById('edit-user-locker').value.trim();
+      const pin = document.getElementById('edit-user-pin').value.trim();
+      const errEl = document.getElementById('editUserError');
+
+      errEl.innerHTML = '';
+      if (!name || !userId || !phone || !lockerId) {
+        errEl.innerHTML = '<div class="alert alert-error">Please fill in all fields.</div>';
+        return;
+      }
+
+      try {
+        const response = await fetch(`${API_URL}/users/${oldUserId}`, {
+          method: 'PUT',
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${authToken}` 
+          },
+          body: JSON.stringify({ name, userId, phone, lockerId, pin })
+        });
+        if (handleUnauthorized(response)) return;
+        if (response.ok) {
+          closeEditUserModal();
+          refreshUsers();
+        } else {
+          const data = await response.json().catch(() => ({}));
+          errEl.innerHTML = `<div class="alert alert-error">${data.error || 'Failed to edit user.'}</div>`;
+        }
+      } catch (err) {
+        errEl.innerHTML = `<div class="alert alert-error">${err.message}</div>`;
+      }
+    }
+
+    /* ════════════════════════════════════════════
+       SYSTEM HEALTH MONITORING
+    ════════════════════════════════════════════ */
+    async function refreshSystemHealth() {
+      const content = document.getElementById('healthContent');
+      if (!content) return;
+      content.innerHTML = '<div class="loading"><div class="spinner"></div> Testing connections and querying lockers...</div>';
+
+      try {
+        const response = await fetch(`${API_URL}/admin/health`, {
+          headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+        if (handleUnauthorized(response)) return;
+
+        const data = await response.json();
+
+        // Update health indicator cards
+        const up = (id, htmlVal) => { const el = document.getElementById(id); if (el) el.innerHTML = htmlVal; };
+        
+        up('hl-mqtt', data.mqttConnected 
+          ? '<span style="color:var(--green)">Online</span>' 
+          : '<span style="color:var(--red)">Offline</span>');
+          
+        up('hl-firebase', data.firebaseConnected 
+          ? '<span style="color:var(--green)">Online</span>' 
+          : '<span style="color:var(--red)">Offline</span>');
+          
+        up('hl-sms', data.smsGatewayStatus.includes('Sandbox') 
+          ? '<span style="color:var(--orange)">Sandbox Active</span>' 
+          : '<span style="color:var(--green)">Production Active</span>');
+          
+        up('hl-online', data.onlineCount);
+        up('hl-offline', data.offlineCount);
+        up('hl-sync', new Date(data.lastSyncTime).toLocaleTimeString());
+
+        // Render health table
+        let html = `
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Locker ID</th>
+                  <th>Status</th>
+                  <th>Door State</th>
+                  <th>Battery</th>
+                  <th>Signal Strength (RSSI)</th>
+                  <th>Last Seen</th>
+                </tr>
+              </thead>
+              <tbody>
+        `;
+
+        data.lockers.forEach(l => {
+          const dot = l.online ? 'status-dot-green' : 'status-dot-red';
+          const lastSeenText = l.lastSeen ? new Date(l.lastSeen).toLocaleString() : 'Never';
+          const signalColor = l.rssi > -70 ? 'var(--green)' : l.rssi > -85 ? 'var(--orange)' : 'var(--red)';
+          const batteryColor = l.battery > 50 ? 'var(--green)' : l.battery > 20 ? 'var(--orange)' : 'var(--red)';
+          html += `
+            <tr>
+              <td><strong>Locker ${l.id}</strong></td>
+              <td><span class="status-dot ${dot}"></span> ${l.online ? 'Online' : 'Offline'}</td>
+              <td>${(l.doorState || 'N/A').toUpperCase()}</td>
+              <td style="color:${batteryColor}; font-weight:600;">${l.battery}%</td>
+              <td style="color:${signalColor}; font-weight:600;">${l.rssi} dBm</td>
+              <td>${lastSeenText}</td>
+            </tr>
+          `;
+        });
+        html += '</tbody></table></div>';
+        content.innerHTML = html;
+      } catch (err) {
+        content.innerHTML = `<div class="alert alert-error">Error loading system health: ${err.message}</div>`;
+      }
+    }
+
+    /* ════════════════════════════════════════════
+       ANALYTICS DASHBOARD & CHARTING
+    ════════════════════════════════════════════ */
+    function applyAnalyticsFilters() {
+      calculateAnalytics();
+    }
+
+    function resetAnalyticsFilters() {
+      const fromEl = document.getElementById('analytics-from-date');
+      const toEl = document.getElementById('analytics-to-date');
+      const lockerEl = document.getElementById('analytics-locker-filter');
+      const eventEl = document.getElementById('analytics-event-filter');
+      if (fromEl) fromEl.value = '';
+      if (toEl) toEl.value = '';
+      if (lockerEl) lockerEl.value = '';
+      if (eventEl) eventEl.value = '';
+      calculateAnalytics();
+    }
+
+    function calculateAnalytics() {
+      // Filter the audit log cache
+      let filtered = allLogsData;
+      const lockerVal = document.getElementById('analytics-locker-filter')?.value || '';
+      const eventVal  = document.getElementById('analytics-event-filter')?.value || '';
+      const fromVal   = document.getElementById('analytics-from-date')?.value || '';
+      const toVal     = document.getElementById('analytics-to-date')?.value || '';
+
+      if (lockerVal) {
+        filtered = filtered.filter(l => l.lockerId === lockerVal);
+      }
+      if (eventVal) {
+        if (eventVal === 'FAILED') {
+          filtered = filtered.filter(l => l.eventType === 'OTP_FAILED' || l.eventType === 'PIN_FAILED');
+        } else {
+          filtered = filtered.filter(l => (l.eventType || '').toUpperCase().includes(eventVal.toUpperCase()));
+        }
+      }
+      if (fromVal) {
+        const from = new Date(fromVal + 'T00:00:00');
+        filtered = filtered.filter(l => new Date(l.timestamp) >= from);
+      }
+      if (toVal) {
+        const to = new Date(toVal + 'T23:59:59.999');
+        filtered = filtered.filter(l => new Date(l.timestamp) <= to);
+      }
+
+      // 1. Calculate Summary Stats
+      const totalUnlocks = filtered.filter(l => ['OTP_UNLOCK', 'PIN_UNLOCK', 'ADMIN_UNLOCK'].includes(l.eventType)).length;
+      const otpUnlocks = filtered.filter(l => l.eventType === 'OTP_UNLOCK').length;
+      const pinUnlocks = filtered.filter(l => l.eventType === 'PIN_UNLOCK').length;
+      const adminUnlocks = filtered.filter(l => l.eventType === 'ADMIN_UNLOCK').length;
+      const failedAttempts = filtered.filter(l => ['OTP_FAILED', 'PIN_FAILED'].includes(l.eventType)).length;
+      const tamperAlerts = filtered.filter(l => l.eventType === 'TAMPER_ALERT').length;
+
+      // Unlocks per locker counts (for Chart 1 and Most Active calculation)
+      const unlocksPerLocker = {
+        'locker_01': 0, 'locker_02': 0, 'locker_03': 0,
+        'locker_04': 0, 'locker_05': 0, 'locker_06': 0, 'locker_07': 0
+      };
+      
+      filtered.forEach(log => {
+        if (['OTP_UNLOCK', 'PIN_UNLOCK', 'ADMIN_UNLOCK'].includes(log.eventType)) {
+          if (unlocksPerLocker[log.lockerId] !== undefined) {
+            unlocksPerLocker[log.lockerId]++;
+          }
+        }
+      });
+
+      let mostActiveLocker = '—';
+      let maxCount = 0;
+      Object.entries(unlocksPerLocker).forEach(([id, cnt]) => {
+        if (cnt > maxCount) {
+          maxCount = cnt;
+          mostActiveLocker = `Locker ${id.split('_')[1]} (${cnt})`;
+        }
+      });
+
+      const avgUnlocks = (totalUnlocks / 7).toFixed(1);
+
+      // Populate statistics labels
+      const up = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+      up('an-total-unlocks', totalUnlocks);
+      up('an-otp-unlocks', otpUnlocks);
+      up('an-pin-unlocks', pinUnlocks);
+      up('an-admin-unlocks', adminUnlocks);
+      up('an-failed-attempts', failedAttempts);
+      up('an-tamper-alerts', tamperAlerts);
+      up('an-most-active', mostActiveLocker);
+      up('an-avg-unlocks', avgUnlocks);
+
+      // 2. Render Chart 1: Unlocks per Locker (Bar Chart)
+      const ctxLocker = document.getElementById('chart-locker-unlocks')?.getContext('2d');
+      if (ctxLocker) {
+        if (lockerUnlocksChartInstance) lockerUnlocksChartInstance.destroy();
+        lockerUnlocksChartInstance = new Chart(ctxLocker, {
+          type: 'bar',
+          data: {
+            labels: ['Locker 1', 'Locker 2', 'Locker 3', 'Locker 4', 'Locker 5', 'Locker 6', 'Locker 7'],
+            datasets: [{
+              label: 'Unlocks',
+              data: [
+                unlocksPerLocker['locker_01'], unlocksPerLocker['locker_02'],
+                unlocksPerLocker['locker_03'], unlocksPerLocker['locker_04'],
+                unlocksPerLocker['locker_05'], unlocksPerLocker['locker_06'],
+                unlocksPerLocker['locker_07']
+              ],
+              backgroundColor: '#2563EB',
+              borderRadius: 5
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+          }
+        });
+      }
+
+      // 3. Render Chart 2: Unlock Channels Share (Doughnut Chart)
+      const ctxType = document.getElementById('chart-type-share')?.getContext('2d');
+      if (ctxType) {
+        if (typeShareChartInstance) typeShareChartInstance.destroy();
+        typeShareChartInstance = new Chart(ctxType, {
+          type: 'doughnut',
+          data: {
+            labels: ['OTP Unlock', 'PIN Unlock', 'Admin Unlock'],
+            datasets: [{
+              data: [otpUnlocks, pinUnlocks, adminUnlocks],
+              backgroundColor: ['#1D4ED8', '#10B981', '#F59E0B']
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { position: 'bottom' } }
+          }
+        });
+      }
+
+      // 4. Render Chart 3: Access Trends (Line Chart of unlocks over time)
+      const ctxTrend = document.getElementById('chart-access-trends')?.getContext('2d');
+      if (ctxTrend) {
+        // Group unlocks by date
+        const unlocksByDate = {};
+        filtered.forEach(log => {
+          if (['OTP_UNLOCK', 'PIN_UNLOCK', 'ADMIN_UNLOCK'].includes(log.eventType)) {
+            const dateStr = new Date(log.timestamp).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+            unlocksByDate[dateStr] = (unlocksByDate[dateStr] || 0) + 1;
+          }
+        });
+
+        // Get sorted dates (last 7 days or matching logs)
+        const sortedDates = Object.keys(unlocksByDate).sort((a, b) => new Date(a) - new Date(b));
+        const trendData = sortedDates.map(d => unlocksByDate[d]);
+
+        if (accessTrendsChartInstance) accessTrendsChartInstance.destroy();
+        accessTrendsChartInstance = new Chart(ctxTrend, {
+          type: 'line',
+          data: {
+            labels: sortedDates.length > 0 ? sortedDates : ['No Data'],
+            datasets: [{
+              label: 'Accesses',
+              data: trendData.length > 0 ? trendData : [0],
+              borderColor: '#1D4ED8',
+              backgroundColor: 'rgba(29, 78, 216, 0.1)',
+              fill: true,
+              tension: 0.3
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+          }
+        });
+      }
+    }
+
+    /* ════════════════════════════════════════════
+       SESSION / LOGOUT
+    ════════════════════════════════════════════ */
+    async function checkSession() {
+      try {
+        const response = await fetch(`${API_URL}/admin/me`, {
+          headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+        if (response.status !== 200) logout();
+      } catch (error) {
+        console.error('Session check failed', error);
+      }
+    }
+
+    async function logout() {
+      // Notify the server — fire-and-forget so UI always clears even if API is down
+      if (authToken) {
+        fetch(`${API_URL}/admin/logout`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${authToken}` }
+        }).catch(() => {});
+      }
+      if (tamperPollTimer)    { clearInterval(tamperPollTimer);    tamperPollTimer    = null; }
+      if (lockerRefreshTimer) { clearInterval(lockerRefreshTimer); lockerRefreshTimer = null; }
+      if (notificationPollTimer) { clearInterval(notificationPollTimer); notificationPollTimer = null; }
+      tamperInitialized = false;
+      seenTamperIds.clear();
+      document.getElementById('tamperBanners').innerHTML = '';
+      document.getElementById('notification-bell-wrapper').style.display = 'none';
+      document.getElementById('notificationDrawer').classList.remove('active');
+      localStorage.removeItem('adminToken');
+      localStorage.removeItem('currentUser');
+      authToken   = null;
+      currentUser = null;
+      showLogin();
+    }
+
+    /* ── Notifications functions ── */
+    async function loadNotifications() {
+      if (!authToken) return;
+      try {
+        const response = await fetch(`${API_URL}/admin/notifications`, {
+          headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+        if (response.ok) {
+          notificationsList = await response.json();
+          renderNotifications();
+        }
+      } catch (err) {
+        console.error('Failed to load notifications', err);
+      }
+    }
+
+    function renderNotifications() {
+      const filter = document.getElementById('notificationFilter').value;
+      const listEl = document.getElementById('notificationList');
+      const badgeEl = document.getElementById('unread-count');
+      
+      const filtered = notificationsList.filter(n => filter === 'ALL' || n.type === filter);
+      const unreadCount = notificationsList.filter(n => !n.read).length;
+      
+      if (unreadCount > 0) {
+        badgeEl.textContent = unreadCount;
+        badgeEl.style.display = 'flex';
+      } else {
+        badgeEl.style.display = 'none';
+      }
+
+      if (filtered.length === 0) {
+        listEl.innerHTML = '<div style="text-align:center; padding:2rem; color:var(--muted);">No notifications matching filter</div>';
+        return;
+      }
+
+      listEl.innerHTML = filtered.map(item => `
+        <div class="notification-item ${item.read ? '' : 'unread'}">
+          <div class="notification-item-message">${item.message}</div>
+          <div class="notification-item-time">${new Date(item.timestamp).toLocaleString()}</div>
+          <div class="notification-actions">
+            ${item.read ? '' : `<button class="notification-btn read-btn" onclick="markNotificationRead('${item.id}')">Read</button>`}
+            <button class="notification-btn clear-btn" onclick="clearNotification('${item.id}')">Clear</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    async function markNotificationRead(id) {
+      try {
+        const response = await fetch(`${API_URL}/admin/notifications/${id}/read`, {
+          method: 'PUT',
+          headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+        if (response.ok) {
+          loadNotifications();
+        }
+      } catch (err) {
+        console.error('Failed to mark read', err);
+      }
+    }
+
+    async function clearNotification(id) {
+      try {
+        const response = await fetch(`${API_URL}/admin/notifications/${id}/clear`, {
+          method: 'PUT',
+          headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+        if (response.ok) {
+          loadNotifications();
+        }
+      } catch (err) {
+        console.error('Failed to clear notification', err);
+      }
+    }
+
+    async function clearAllNotifications() {
+      if (!confirm('Are you sure you want to clear all notifications?')) return;
+      try {
+        const response = await fetch(`${API_URL}/admin/notifications/clear-all`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+        if (response.ok) {
+          loadNotifications();
+        }
+      } catch (err) {
+        console.error('Failed to clear all notifications', err);
+      }
+    }
+
+    function toggleNotificationDrawer(show) {
+      const drawer = document.getElementById('notificationDrawer');
+      if (show) {
+        drawer.classList.add('active');
+        loadNotifications();
+      } else {
+        drawer.classList.remove('active');
+      }
+    }
+
+    function populateLockerDropdowns(lockers) {
+      const selectEl = document.getElementById('newUserLocker');
+      if (!selectEl) return;
+      const available = lockers.filter(l => !l.assignedTo && !l.userId && !l.assignedUser);
+      let html = '<option value="">Select an available locker</option>';
+      if (available.length === 0) {
+        html += '<option value="">No lockers available</option>';
+      } else {
+        available.forEach(l => {
+          html += `<option value="${l.id}">${l.id}</option>`;
+        });
+      }
+      selectEl.innerHTML = html;
+    }
+
+    function parseStudentId(message) {
+      if (!message) return 'N/A';
+      const match = message.match(/student\s*(?:\:|\s+)\s*([^\s()]+)/i);
+      return match ? match[1] : 'N/A';
+    }
+
+    function openLockerHistoryModal(lockerId) {
+      const portal = document.getElementById('assignModalPortal');
+      if (!portal) return;
+
+      const historyLogs = allLogsData.filter(log => 
+        log.lockerId === lockerId && (log.eventType === 'ASSIGN' || log.eventType === 'UNASSIGN')
+      );
+
+      let rowsHtml = '';
+      if (historyLogs.length === 0) {
+        rowsHtml = `
+          <tr>
+            <td colspan="4" style="text-align:center; padding:2rem; color:var(--muted); font-style:italic;">
+              No assignment or release logs found for this locker.
+            </td>
+          </tr>
+        `;
+      } else {
+        historyLogs.forEach(log => {
+          const actionText = log.eventType === 'ASSIGN' ? 'Assign' : 'Release';
+          const actionStyle = log.eventType === 'ASSIGN' ? 'color:var(--green); font-weight:700;' : 'color:var(--orange); font-weight:700;';
+          const studentId = parseStudentId(log.description || log.details);
+          const adminUser = log.userId || 'admin';
+          const time = new Date(log.timestamp).toLocaleString();
+
+          rowsHtml += `
+            <tr style="border-bottom:1px solid var(--border);">
+              <td style="padding:0.75rem; ${actionStyle}">${actionText}</td>
+              <td style="padding:0.75rem;"><strong>${studentId}</strong></td>
+              <td style="padding:0.75rem;">${adminUser}</td>
+              <td style="padding:0.75rem;">${time}</td>
+            </tr>
+          `;
+        });
+      }
+
+      portal.innerHTML = `
+        <div class="modal-overlay" id="history-modal" onclick="maybeCloseHistoryModal(event)">
+          <div class="modal-card" style="max-width: 600px; width:100%;">
+            <h3 style="margin-top:0;">Assignment History - Locker ${lockerId}</h3>
+            <div class="table-container" style="max-height: 300px; overflow-y: auto; margin-top: 1rem; border:1px solid var(--border); border-radius:8px;">
+              <table style="width:100%; border-collapse: collapse; text-align:left;">
+                <thead>
+                  <tr style="background:var(--canvas); border-bottom:1px solid var(--border); color:var(--text-muted); font-size:0.8rem; text-transform:uppercase;">
+                    <th style="padding:0.75rem;">Action</th>
+                    <th style="padding:0.75rem;">Student ID</th>
+                    <th style="padding:0.75rem;">Admin</th>
+                    <th style="padding:0.75rem;">Timestamp</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${rowsHtml}
+                </tbody>
+              </table>
+            </div>
+            <div class="modal-actions" style="margin-top: 1.5rem; justify-content: flex-end;">
+              <button class="btn-cancel" onclick="closeHistoryModal()">Close</button>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function maybeCloseHistoryModal(e) {
+      if (e.target.id === 'history-modal') closeHistoryModal();
+    }
+
+    function closeHistoryModal() {
+      const portal = document.getElementById('assignModalPortal');
+      if (portal) portal.innerHTML = '';
+    }
+
+    init();
+  </script>
+</body>
+</html>

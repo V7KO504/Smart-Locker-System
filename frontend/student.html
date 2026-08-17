@@ -1,0 +1,1593 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Hifadhi Student — Smart Locker Access</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --canvas:    #F0F4FF;
+      --surface:   #FFFFFF;
+      --primary:   #1D4ED8;
+      --primary-2: #2563EB;
+      --action:    #2563EB;
+      --text:      #111827;
+      --muted:     #6B7280;
+      --border:    #E5E7EB;
+      --success:   #16A34A;
+      --danger:    #DC2626;
+
+      --navy:       var(--primary);
+      --blue:       var(--primary-2);
+      --light-blue: #EFF6FF;
+      --white:      var(--surface);
+      --gray-100:   var(--canvas);
+      --gray-200:   var(--border);
+      --gray-300:   #D1D5DB;
+      --gray-600:   var(--muted);
+      --gray-900:   var(--text);
+      --red:        var(--danger);
+      --green:      var(--success);
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--canvas);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      color: var(--text);
+    }
+
+    button, input, select, textarea {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+
+    h1, h2, h3, .success-title {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-weight: 700;
+    }
+
+    /* ── Mobile column centering ── */
+    #root {
+      max-width: 420px;
+      margin: 0 auto;
+      min-height: 100%;
+      display: flex;
+      flex-direction: column;
+      background: var(--canvas);
+      position: relative;
+    }
+
+    /* ── Header (top app bar) ── */
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0.9rem 1.25rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky; top: 0; z-index: 10;
+    }
+
+    header h1 {
+      font-size: 1rem; font-weight: 700;
+      color: var(--text); letter-spacing: -0.01em;
+    }
+
+    #headerRight { display: none; align-items: center; gap: 0.75rem; }
+    #headerRight.visible { display: flex; }
+    #headerUserName { font-size: 0.85rem; color: var(--muted); }
+
+    .btn-logout {
+      background: var(--red); color: #fff;
+      border: none; padding: 0.4rem 0.85rem;
+      border-radius: 8px; cursor: pointer; font-size: 0.8rem; font-weight: 500;
+    }
+
+    /* ── Screens ── */
+    .screen { display: none; }
+    .screen.active { display: block; }
+
+    /* ── Page layout ── */
+    .page {
+      padding: 1.25rem 1rem 5rem;
+    }
+
+    /* ── Cards ── */
+    .card {
+      background: var(--white);
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      padding: 1.5rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.04);
+      margin-bottom: 1rem;
+    }
+
+    .card h2 {
+      font-size: 1.1rem; color: var(--text);
+      margin-bottom: 1rem; font-weight: 700;
+    }
+
+    /* ── Form elements ── */
+    .form-group { margin-bottom: 0.9rem; }
+
+    label {
+      display: block; font-size: 0.85rem; font-weight: 600;
+      margin-bottom: 0.35rem; color: var(--muted);
+    }
+
+    input[type="text"], input[type="tel"], input[type="password"], input[type="email"] {
+      width: 100%; padding: 0.7rem 0.85rem;
+      border: 1.5px solid var(--gray-300);
+      border-radius: 8px; font-size: 1rem;
+      background: var(--white);
+    }
+
+    input:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(37,99,235,0.12);
+    }
+
+    /* ── Buttons ── */
+    .btn {
+      width: 100%; padding: 0.8rem;
+      border: none; border-radius: 10px;
+      font-size: 1rem; font-weight: 600;
+      cursor: pointer; margin-bottom: 0.5rem;
+    }
+
+    .btn-primary { background: var(--action); color: #fff; }
+    .btn-primary:hover { background: var(--primary); }
+    .btn-primary:disabled { background: var(--gray-300); cursor: not-allowed; }
+
+    .btn-secondary { background: #374151; color: #fff; }
+    .btn-secondary:hover { background: #1F2937; }
+
+    .btn-danger { background: var(--red); color: #fff; }
+    .btn-danger:hover { background: #B91C1C; }
+
+    .btn-link {
+      background: none; border: none; color: var(--primary);
+      cursor: pointer; font-size: 0.9rem; text-decoration: underline;
+      padding: 0.25rem 0; display: block; text-align: center;
+    }
+
+    /* ── Alerts ── */
+    .alert { padding: 0.7rem 1rem; border-radius: 6px; font-size: 0.9rem; margin-bottom: 0.75rem; }
+    .alert-error   { background: #FEF2F2; color: var(--red);   border-left: 3px solid var(--red); }
+    .alert-success { background: #F0FDF4; color: var(--green); border-left: 3px solid var(--green); }
+
+    /* ── Bottom tab bar ── */
+    .bottom-tab-bar {
+      display: none;
+      position: fixed;
+      bottom: 0; left: 50%;
+      transform: translateX(-50%);
+      width: 100%; max-width: 420px;
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      z-index: 20;
+      box-shadow: 0 -2px 8px rgba(0,0,0,0.06);
+    }
+
+    .bottom-tab-bar.visible { display: flex; }
+
+    .tab-btn {
+      flex: 1;
+      background: none; border: none;
+      padding: 0.6rem 0.5rem 0.5rem;
+      font-size: 0.72rem; font-weight: 500;
+      cursor: pointer; color: var(--muted);
+      display: flex; flex-direction: column;
+      align-items: center; gap: 0.2rem;
+      transition: color 0.15s;
+    }
+
+    .tab-btn svg { width: 20px; height: 20px; stroke: currentColor; }
+    .tab-btn.active { color: var(--primary); font-weight: 600; }
+
+    /* ── Quick-action cards ── */
+    .quick-card {
+      display: flex; align-items: center; gap: 1rem;
+      background: var(--white); border: 1.5px solid var(--border);
+      border-radius: 12px; padding: 1rem 1.1rem;
+      cursor: pointer; margin-bottom: 0.75rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+
+    .quick-card:hover { border-color: var(--primary); box-shadow: 0 2px 8px rgba(37,99,235,0.1); }
+    .quick-card-icon { font-size: 1.4rem; flex-shrink: 0; }
+    .quick-card-text { font-weight: 600; color: var(--text); font-size: 0.95rem; }
+
+    /* ── Locker badge ── */
+    .locker-badge { text-align: center; padding: 1.25rem 0 0.5rem; }
+    .locker-badge-id { font-size: 2rem; font-weight: 800; color: var(--primary); }
+    .locker-badge-label {
+      font-size: 11px; color: var(--muted);
+      text-transform: uppercase; letter-spacing: 0.08em; margin-top: 0.35rem;
+    }
+
+    /* ── Digit boxes and numpad ── */
+    .digit-row { display: flex; justify-content: center; gap: 0.5rem; margin-bottom: 1rem; }
+
+    .digit-box {
+      width: 46px; height: 54px;
+      border: 2px solid var(--gray-300);
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.5rem; font-weight: 700; background: var(--white);
+    }
+
+    .digit-box.filled { border-color: var(--primary); background: var(--light-blue); }
+
+    .numpad {
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      gap: 0.45rem; max-width: 240px; margin: 0 auto 1rem;
+    }
+
+    .numpad-key {
+      padding: 0.95rem; border: 1.5px solid var(--border);
+      border-radius: 8px; background: var(--white);
+      font-size: 1.2rem; font-weight: 600;
+      cursor: pointer; text-align: center;
+    }
+
+    .numpad-key:active { background: var(--light-blue); }
+    .numpad-backspace-key { background: var(--canvas); font-size: 1.1rem; }
+
+    /* ── Success screen ── */
+    .success-center { text-align: center; padding: 2rem 1rem; }
+    .success-icon { font-size: 3.5rem; margin-bottom: 0.75rem; }
+    .success-title { font-size: 1.3rem; color: var(--text); margin-bottom: 0.5rem; }
+    .success-sub { color: var(--muted); margin-bottom: 1.5rem; }
+    .success-sub span { font-weight: 700; color: var(--primary); }
+
+    /* ── USSD code block ── */
+    .ussd-code-block {
+      font-family: 'Courier New', monospace; font-size: 1.6rem;
+      font-weight: 700; color: var(--primary);
+      border: 2px solid var(--primary);
+      background: var(--white); border-radius: 8px;
+      padding: 0.75rem 1rem; text-align: center;
+      letter-spacing: 2px; margin-bottom: 1rem;
+    }
+
+    /* ── History entries ── */
+    .history-entry {
+      background: var(--white); border-left: 4px solid var(--primary);
+      border-radius: 8px; padding: 0.75rem 1rem; margin-bottom: 0.65rem;
+      border: 1px solid var(--border); border-left-width: 4px;
+    }
+
+    .history-meta { font-size: 0.82rem; color: var(--muted); margin-top: 0.25rem; }
+
+    /* ── Profile rows ── */
+    .profile-row { margin-bottom: 1rem; }
+    .profile-label {
+      font-size: 11px; color: var(--muted); font-weight: 600;
+      text-transform: uppercase; letter-spacing: 0.08em;
+    }
+    .profile-value { font-size: 1rem; font-weight: 600; margin-top: 0.15rem; }
+
+    .empty-state { text-align: center; padding: 2rem; color: var(--muted); }
+
+    .spinner-wrap { text-align: center; padding: 2rem; color: var(--muted); }
+
+    .spinner {
+      display: inline-block; width: 22px; height: 22px;
+      border: 3px solid var(--gray-300); border-top-color: var(--primary);
+      border-radius: 50%; animation: spin 0.8s linear infinite; vertical-align: middle;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+<div id="root">
+  <header>
+    <h1>Hifadhi Student</h1>
+    <div id="headerRight">
+      <span id="headerUserName"></span>
+      <button class="btn-logout" onclick="logout()">Logout</button>
+    </div>
+  </header>
+
+  <!-- ══════════════════════════════════════════
+       SCREEN: LOGIN   id="s-login"
+  ══════════════════════════════════════════ -->
+  <div id="s-login" class="screen active">
+    <div class="page">
+      <div class="card">
+        <h2>Student Sign In</h2>
+        <div id="loginError" data-testid="login-error"></div>
+        <div class="form-group">
+          <label for="loginStudentId">Student ID</label>
+          <input type="text" id="loginStudentId" data-testid="student-id-input"
+            autocomplete="off" placeholder="e.g. INTE/ON/0262/01/24">
+        </div>
+        <div class="form-group">
+          <label for="loginLockerId">Locker ID</label>
+          <input type="text" id="loginLockerId" data-testid="locker-id-input"
+            autocomplete="off" placeholder="e.g. locker_01">
+        </div>
+        <div class="form-group">
+          <label for="loginPhone">Phone Number</label>
+          <input type="tel" id="loginPhone" data-testid="phone-input"
+            autocomplete="off" placeholder="+254…">
+        </div>
+        <button class="btn btn-primary" id="loginBtn" data-testid="login-btn"
+          onclick="handleLogin()">Sign In</button>
+        <button class="btn-link" data-testid="register-link"
+          onclick="show('s-register')">Don't have an account? Register</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════
+       SCREEN: REGISTER   id="s-register"
+  ══════════════════════════════════════════ -->
+  <div id="s-register" class="screen">
+    <div class="page">
+      <div class="card">
+        <h2>Create Account</h2>
+        <div id="regError" data-testid="reg-error"></div>
+        <div class="form-group">
+          <label for="regName">Full Name</label>
+          <input type="text" id="regName" data-testid="reg-name">
+        </div>
+        <div class="form-group">
+          <label for="regStudentId">Student ID</label>
+          <input type="text" id="regStudentId" data-testid="reg-student-id"
+            placeholder="e.g. INTE/ON/0001/01/24">
+        </div>
+        <div class="form-group">
+          <label for="regPhone">Phone Number</label>
+          <input type="tel" id="regPhone" data-testid="reg-phone" placeholder="+254…">
+        </div>
+        <div class="form-group">
+          <label for="regPin">PIN (4 digits)</label>
+          <input type="password" id="regPin" data-testid="reg-pin"
+            maxlength="4" inputmode="numeric" placeholder="••••">
+        </div>
+        <div class="form-group">
+          <label for="regConfirmPin">Confirm PIN</label>
+          <input type="password" id="regConfirmPin" data-testid="reg-confirm-pin"
+            maxlength="4" inputmode="numeric" placeholder="••••">
+        </div>
+        <button class="btn btn-primary" data-testid="reg-submit-btn"
+          onclick="handleRegister()">Create Account</button>
+        <button class="btn-link" onclick="show('s-login')">Already registered? Sign In</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════
+       SCREEN: HOME DASHBOARD   id="s-home"
+  ══════════════════════════════════════════ -->
+  <div id="s-home" class="screen">
+    <div class="page">
+
+      <!-- Home panel -->
+      <div id="home-panel">
+        <div class="card" style="margin-bottom:1rem; padding:1.25rem;">
+          <div data-testid="home-greeting" id="homeGreeting"
+            style="color:var(--muted);margin-bottom:.5rem;font-size:.95rem;font-weight:600;"></div>
+          <div class="locker-badge" style="margin-bottom:1rem;">
+            <div class="locker-badge-id" id="homeLockerDisplay"
+              data-testid="home-locker-id">—</div>
+            <div class="locker-badge-label">Your assigned locker</div>
+          </div>
+          
+          <div id="home-locker-status-block" style="border-top:1px solid var(--border); padding-top:0.75rem; font-size:0.9rem;">
+            <div class="profile-row" style="padding:0.4rem 0;">
+              <div class="profile-label">Locker Status</div>
+              <div class="profile-value" id="homeLockerState" style="font-weight:600; color:var(--primary);">—</div>
+            </div>
+            <div class="profile-row" style="padding:0.4rem 0;">
+              <div class="profile-label">Last Access</div>
+              <div class="profile-value" id="homeLastAccess">—</div>
+            </div>
+            <div class="profile-row" style="padding:0.4rem 0;">
+              <div class="profile-label">Auth Status</div>
+              <div class="profile-value" id="homeAuthStatus" style="font-weight:600;">—</div>
+            </div>
+            <div class="profile-row" style="padding:0.4rem 0;">
+              <div class="profile-label">OTP Expiry</div>
+              <div class="profile-value" id="homeOtpExpiry" style="color:var(--orange)">—</div>
+            </div>
+          </div>
+        </div>
+
+        <button class="btn btn-primary" data-testid="unlock-main-btn"
+          onclick="show('s-request')" style="font-size:1.05rem;">🔓 Unlock My Locker</button>
+
+        <div class="quick-card" data-testid="request-otp-btn"
+          onclick="show('s-request')">
+          <span class="quick-card-icon">📱</span>
+          <span class="quick-card-text">Request OTP to Unlock</span>
+        </div>
+        <div class="quick-card" data-testid="emergency-pin-card"
+          onclick="show('s-pin')">
+          <span class="quick-card-icon">🔑</span>
+          <span class="quick-card-text">Use Emergency PIN</span>
+        </div>
+        <div class="quick-card" data-testid="ussd-card"
+          onclick="goUSSD()">
+          <span class="quick-card-icon">📞</span>
+          <span class="quick-card-text">USSD Access</span>
+        </div>
+        <button class="btn btn-secondary" data-testid="history-btn"
+          onclick="goHistory()">📋 View Access History</button>
+      </div>
+
+      <!-- My Locker panel (hidden by default) -->
+      <div id="lockers-panel" style="display:none;">
+        <div class="card">
+          <h2>My Locker</h2>
+          <div class="profile-row">
+            <div class="profile-label">Locker ID</div>
+            <div class="profile-value" id="lockerPanelId">—</div>
+          </div>
+          <button class="btn btn-primary" onclick="show('s-request')">🔓 Unlock</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════
+       SCREEN: OTP REQUEST   id="s-request"
+  ══════════════════════════════════════════ -->
+  <div id="s-request" class="screen">
+    <div class="page">
+      <div class="card">
+        <h2>Request OTP to Unlock</h2>
+        <div id="requestError" data-testid="request-error"></div>
+        <p id="requestPhoneLabel" style="color:var(--gray-600);margin-bottom:1.25rem;"></p>
+        <button class="btn btn-primary" data-testid="send-otp-btn"
+          onclick="sendOTP()">Send OTP</button>
+        <button class="btn btn-secondary" data-testid="use-ussd-btn"
+          onclick="goUSSD()">Use USSD Instead</button>
+        <button class="btn-link" data-testid="use-pin-link"
+          onclick="show('s-pin')">Use PIN instead</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════
+       SCREEN: OTP ENTRY   id="s-otp"
+  ══════════════════════════════════════════ -->
+  <div id="s-otp" class="screen">
+    <div class="page">
+      <div class="card">
+        <h2>Enter OTP</h2>
+        <p id="otpPhoneLabel" style="color:var(--gray-600);margin-bottom:1rem;"></p>
+
+        <!-- 6 digit boxes -->
+        <div class="digit-row">
+          <div class="digit-box" id="otp-box-0" data-testid="otp-box-0"></div>
+          <div class="digit-box" id="otp-box-1" data-testid="otp-box-1"></div>
+          <div class="digit-box" id="otp-box-2" data-testid="otp-box-2"></div>
+          <div class="digit-box" id="otp-box-3" data-testid="otp-box-3"></div>
+          <div class="digit-box" id="otp-box-4" data-testid="otp-box-4"></div>
+          <div class="digit-box" id="otp-box-5" data-testid="otp-box-5"></div>
+        </div>
+
+        <div id="otpStatus" data-testid="otp-status"
+          style="text-align:center;min-height:1.5rem;margin-bottom:.75rem;"></div>
+
+        <!-- Numpad -->
+        <div class="numpad">
+          <button class="numpad-key" data-testid="otp-key-1" onclick="otpDigit(1)">1</button>
+          <button class="numpad-key" data-testid="otp-key-2" onclick="otpDigit(2)">2</button>
+          <button class="numpad-key" data-testid="otp-key-3" onclick="otpDigit(3)">3</button>
+          <button class="numpad-key" data-testid="otp-key-4" onclick="otpDigit(4)">4</button>
+          <button class="numpad-key" data-testid="otp-key-5" onclick="otpDigit(5)">5</button>
+          <button class="numpad-key" data-testid="otp-key-6" onclick="otpDigit(6)">6</button>
+          <button class="numpad-key" data-testid="otp-key-7" onclick="otpDigit(7)">7</button>
+          <button class="numpad-key" data-testid="otp-key-8" onclick="otpDigit(8)">8</button>
+          <button class="numpad-key" data-testid="otp-key-9" onclick="otpDigit(9)">9</button>
+          <div></div>
+          <button class="numpad-key" data-testid="otp-key-0" onclick="otpDigit(0)">0</button>
+          <button class="numpad-key numpad-backspace-key" data-testid="otp-backspace"
+            onclick="otpBack()">⌫</button>
+        </div>
+
+        <button class="btn-link" data-testid="resend-otp-link"
+          onclick="resendOTP()">Resend OTP</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════
+       SCREEN: PIN ENTRY   id="s-pin"
+  ══════════════════════════════════════════ -->
+  <div id="s-pin" class="screen">
+    <div class="page">
+      <div class="card">
+        <h2>Enter PIN to Unlock</h2>
+
+        <!-- 4 digit boxes -->
+        <div class="digit-row">
+          <div class="digit-box" id="pin-box-0" data-testid="pin-box-0"></div>
+          <div class="digit-box" id="pin-box-1" data-testid="pin-box-1"></div>
+          <div class="digit-box" id="pin-box-2" data-testid="pin-box-2"></div>
+          <div class="digit-box" id="pin-box-3" data-testid="pin-box-3"></div>
+        </div>
+
+        <div id="pinStatus" data-testid="pin-status"
+          style="text-align:center;min-height:1.5rem;margin-bottom:.75rem;"></div>
+
+        <!-- Numpad -->
+        <div class="numpad">
+          <button class="numpad-key" data-testid="pin-key-1" onclick="pinDigit(1)">1</button>
+          <button class="numpad-key" data-testid="pin-key-2" onclick="pinDigit(2)">2</button>
+          <button class="numpad-key" data-testid="pin-key-3" onclick="pinDigit(3)">3</button>
+          <button class="numpad-key" data-testid="pin-key-4" onclick="pinDigit(4)">4</button>
+          <button class="numpad-key" data-testid="pin-key-5" onclick="pinDigit(5)">5</button>
+          <button class="numpad-key" data-testid="pin-key-6" onclick="pinDigit(6)">6</button>
+          <button class="numpad-key" data-testid="pin-key-7" onclick="pinDigit(7)">7</button>
+          <button class="numpad-key" data-testid="pin-key-8" onclick="pinDigit(8)">8</button>
+          <button class="numpad-key" data-testid="pin-key-9" onclick="pinDigit(9)">9</button>
+          <div></div>
+          <button class="numpad-key" data-testid="pin-key-0" onclick="pinDigit(0)">0</button>
+          <button class="numpad-key numpad-backspace-key" data-testid="pin-backspace"
+            onclick="pinBack()">⌫</button>
+        </div>
+
+        <button class="btn btn-secondary" onclick="show('s-home')">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════
+       SCREEN: SUCCESS   id="s-success"
+  ══════════════════════════════════════════ -->
+  <div id="s-success" class="screen">
+    <div class="page">
+      <div class="card success-center">
+        <div class="success-icon">✅</div>
+        <div class="success-title" id="successTitle" data-testid="success-locker-name">
+          Locker Unlocked!
+        </div>
+        <div class="success-sub" data-testid="success-countdown">
+          Auto-returning in <span id="successSecs">10</span>s
+        </div>
+        <button class="btn btn-primary" data-testid="success-done-btn"
+          onclick="successDone()">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════
+       SCREEN: USSD   id="s-ussd"
+  ══════════════════════════════════════════ -->
+  <div id="s-ussd" class="screen">
+    <div class="page">
+      <div class="card">
+        <h2>USSD Fallback Simulator</h2>
+        <p style="color:var(--gray-600);margin-bottom:1rem;">
+          Simulate offline USSD interaction on your device:
+        </p>
+        <div class="ussd-code-block" id="ussdCodeDisplay"
+          data-testid="ussd-shortcode">*384*locker_01#</div>
+        
+        <div style="display:flex; gap:0.5rem; margin-bottom:1rem;">
+          <button class="btn btn-primary" style="flex:1;" onclick="startUSSDSimulation()">📞 Dial USSD Code</button>
+          <button class="btn btn-secondary" onclick="show('s-home')">Back</button>
+        </div>
+
+        <!-- USSD Simulator Screen (Hidden by default) -->
+        <div id="ussd-sim-box" style="display:none; border:2px solid var(--border); border-radius:8px; padding:1rem; background:#111; color:#fff; font-family:monospace; margin-top:1rem; position:relative;">
+          <div style="display:flex; justify-content:space-between; border-bottom:1px solid #333; padding-bottom:0.5rem; margin-bottom:0.5rem; font-size:0.8rem; color:#888;">
+            <span>Smart USSD v1.0</span>
+            <span id="ussd-timer">30s</span>
+          </div>
+          <div id="ussd-display" style="min-height:80px; font-size:0.95rem; white-space:pre-wrap; margin-bottom:1rem; color:#0f0;"></div>
+          
+          <div id="ussd-input-group" style="display:none;">
+            <input type="text" id="ussd-input-val" style="width:100%; background:#222; border:1px solid #444; color:#fff; padding:0.4rem; font-size:0.95rem; border-radius:4px; margin-bottom:0.75rem;" placeholder="Enter response...">
+            <div style="display:flex; gap:0.5rem;">
+              <button class="btn btn-primary" style="flex:1; padding:0.4rem; font-size:0.9rem;" onclick="sendUSSDStep()">Send</button>
+              <button class="btn btn-secondary" style="flex:1; padding:0.4rem; font-size:0.9rem; background:#333; color:#fff;" onclick="closeUSSD()">Cancel</button>
+            </div>
+          </div>
+          
+          <div id="ussd-close-group" style="display:none; display:flex; gap:0.5rem;">
+            <button class="btn btn-primary" id="ussd-copy-otp-btn" style="flex:1; padding:0.4rem; font-size:0.9rem; display:none;" onclick="copyUSSDOtp()">Copy OTP</button>
+            <button class="btn btn-secondary" style="flex:1; padding:0.4rem; font-size:0.9rem; background:#333; color:#fff;" onclick="closeUSSD()">Close</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════
+       SCREEN: ACCESS HISTORY   id="s-history"
+  ══════════════════════════════════════════ -->
+  <div id="s-history" class="screen">
+    <div class="page">
+      <div class="card" style="max-width: 800px; width: 100%;">
+        <h2 style="margin-top:0;">Access History</h2>
+        
+        <!-- Filter and Sort Toolbar -->
+        <div class="history-toolbar" style="display:flex; gap:0.75rem; flex-wrap:wrap; margin-bottom:1.25rem; background:var(--gray-100); padding:0.75rem; border-radius:8px; border:1px solid var(--border); font-size:0.88rem; color:var(--text);">
+          <div style="display:flex; flex-direction:column; gap:0.25rem; flex:1; min-width:140px;">
+            <label for="history-method-filter" style="font-weight:600; color:var(--muted); font-size:0.75rem; text-transform:uppercase;">Method</label>
+            <select id="history-method-filter" onchange="applyHistoryFilter()" style="padding:0.4rem; border-radius:6px; border:1px solid var(--border); background:var(--white);">
+              <option value="ALL">All Methods</option>
+              <option value="OTP">OTP</option>
+              <option value="PIN">PIN</option>
+              <option value="USSD">USSD</option>
+              <option value="ADMIN">Administrator</option>
+            </select>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:0.25rem; flex:1; min-width:140px;">
+            <label for="history-result-filter" style="font-weight:600; color:var(--muted); font-size:0.75rem; text-transform:uppercase;">Result</label>
+            <select id="history-result-filter" onchange="applyHistoryFilter()" style="padding:0.4rem; border-radius:6px; border:1px solid var(--border); background:var(--white);">
+              <option value="ALL">All Results</option>
+              <option value="SUCCESS">Granted</option>
+              <option value="FAILED">Denied</option>
+            </select>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:0.25rem; flex:1; min-width:140px;">
+            <label for="history-sort-order" style="font-weight:600; color:var(--muted); font-size:0.75rem; text-transform:uppercase;">Sort Order</label>
+            <select id="history-sort-order" onchange="applyHistoryFilter()" style="padding:0.4rem; border-radius:6px; border:1px solid var(--border); background:var(--white);">
+              <option value="NEWEST">Newest Records</option>
+              <option value="OLDEST">Oldest Records</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="historyList" data-testid="history-list">
+          <div class="spinner-wrap"><div class="spinner"></div> Loading…</div>
+        </div>
+      </div>
+      <button class="btn btn-secondary" onclick="show('s-home')">Back</button>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════
+       SCREEN: PROFILE   id="s-profile"
+  ══════════════════════════════════════════ -->
+  <div id="s-profile" class="screen">
+    <div class="page">
+      <div class="card">
+        <h2>My Profile</h2>
+        <div class="profile-row">
+          <div class="profile-label">Name</div>
+          <div class="profile-value" id="profileName" data-testid="profile-name">—</div>
+        </div>
+        <div class="profile-row">
+          <div class="profile-label">Student ID</div>
+          <div class="profile-value" id="profileId" data-testid="profile-id">—</div>
+        </div>
+        <div class="profile-row">
+          <div class="profile-label">Locker</div>
+          <div class="profile-value" id="profileLocker" data-testid="profile-locker">—</div>
+        </div>
+        <div class="profile-row">
+          <div class="profile-label">Phone</div>
+          <div class="profile-value" id="profilePhone">—</div>
+        </div>
+        <div class="profile-row">
+          <div class="profile-label">Registration Date</div>
+          <div class="profile-value" id="profileJoined">—</div>
+        </div>
+        
+        <button class="btn btn-primary" id="editPhoneBtn" onclick="togglePhoneEdit(true)" style="margin-top:.5rem;">Update Phone Number</button>
+
+        <div id="phone-edit-panel" style="display:none; margin-top: 1rem; border-top: 1px solid var(--border); padding-top: 1rem;">
+          <div id="phoneEditError"></div>
+          <div class="form-group">
+            <label for="editPhoneInput">New Phone Number</label>
+            <input type="tel" id="editPhoneInput" placeholder="+254…">
+          </div>
+          <div class="form-group">
+            <label for="editPhonePin">Verify PIN</label>
+            <input type="password" id="editPhonePin" maxlength="4" placeholder="••••">
+          </div>
+          <button class="btn btn-primary" onclick="submitPhoneUpdate()">Save Changes</button>
+          <button class="btn btn-secondary" onclick="togglePhoneEdit(false)">Cancel</button>
+        </div>
+
+        <button class="btn btn-danger" data-testid="profile-signout-btn"
+          onclick="logout()" style="margin-top:.5rem;">Sign Out</button>
+        <button class="btn btn-secondary" onclick="show('s-home')">Back</button>
+      </div>
+    </div>
+  </div>
+
+</div><!-- #root -->
+
+<!-- Fixed bottom tab bar (shown only when logged in) -->
+<nav class="bottom-tab-bar" id="bottomTabBar">
+  <button class="tab-btn active" data-testid="tab-home"
+    onclick="switchHomeTab('home-panel')">
+    <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+      <polyline points="9 22 9 12 15 12 15 22"/>
+    </svg>
+    Home
+  </button>
+  <button class="tab-btn" data-testid="tab-lockers"
+    onclick="switchHomeTab('lockers-panel')">
+    <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+      <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+    </svg>
+    My Locker
+  </button>
+  <button class="tab-btn" data-testid="tab-profile"
+    onclick="show('s-profile')">
+    <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+      <circle cx="12" cy="7" r="4"/>
+    </svg>
+    Profile
+  </button>
+</nav>
+
+<script>
+  const API = 'http://localhost:3000/api';
+
+  /* ── state ── */
+  let token      = localStorage.getItem('studentToken')   || null;
+  let userName   = localStorage.getItem('studentName')    || '';
+  let userPhone  = localStorage.getItem('studentPhone')   || '';
+  let userLocker = localStorage.getItem('studentLocker')  || '';
+  let userSid    = localStorage.getItem('studentId')      || '';
+  let userJoined = localStorage.getItem('studentJoined')  || '';
+
+  let otpBuf = [];   // OTP digits buffer
+  let pinBuf = [];   // PIN digits buffer
+  let successTimer = null;
+
+  // New state variables for security & simulation
+  let otpExpiry = null;
+  let otpTimerInterval = null;
+  let resendCooldownInterval = null;
+  
+  let pinAttemptsRemaining = 5;
+  let pinLockoutUntil = null;
+  let pinTimerInterval = null;
+  
+  let ussdTimerInterval = null;
+  let ussdText = '';
+  let activeUSSDOtp = '';
+  let ussdTimeRemaining = 30;
+  let currentHistoryData = [];
+
+  /* ── screen navigation ── */
+  function show(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    if (id === 's-pin') {
+      checkPinStatus();
+    } else if (id === 's-home') {
+      populateDashboard();
+    }
+  }
+
+  function switchHomeTab(panelId) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    const map = { 'home-panel': 'tab-home', 'lockers-panel': 'tab-lockers' };
+    const btn = document.querySelector(`[data-testid="${map[panelId]}"]`);
+    if (btn) btn.classList.add('active');
+    document.getElementById('home-panel').style.display    = panelId === 'home-panel'    ? '' : 'none';
+    document.getElementById('lockers-panel').style.display = panelId === 'lockers-panel' ? '' : 'none';
+  }
+
+  /* ── init ── */
+  function init() {
+    // ?logout=1 forces clean unauthenticated state — must run before any session restore.
+    if (new URLSearchParams(window.location.search).get('logout') === '1') {
+      ['studentToken','studentName','studentPhone','studentLocker','studentId','studentJoined']
+        .forEach(k => localStorage.removeItem(k));
+      try { sessionStorage.clear(); } catch (_) {}
+      token = null; userName = ''; userPhone = ''; userLocker = ''; userSid = ''; userJoined = '';
+      history.replaceState(null, '', window.location.pathname);
+      show('s-login');
+      return;
+    }
+    if (token && userName) {
+      populateDashboard();
+      show('s-home');
+    } else {
+      show('s-login');
+    }
+  }
+
+  async function populateDashboard() {
+    document.getElementById('headerRight').classList.add('visible');
+    document.getElementById('bottomTabBar').classList.add('visible');
+    document.getElementById('headerUserName').textContent = userName;
+
+    document.getElementById('homeGreeting').textContent    = `Welcome back, ${userName}!`;
+    document.getElementById('homeLockerDisplay').textContent = userLocker || '—';
+    document.getElementById('lockerPanelId').textContent   = userLocker || '—';
+
+    const ussdCode = `*384*${userLocker || 'locker'}#`;
+    document.getElementById('ussdCodeDisplay').textContent = ussdCode;
+
+    document.getElementById('profileName').textContent   = userName;
+    document.getElementById('profileId').textContent     = userSid;
+    document.getElementById('profileLocker').textContent = userLocker;
+    document.getElementById('profilePhone').textContent  = userPhone;
+    document.getElementById('profileJoined').textContent = userJoined ? new Date(parseInt(userJoined) ? parseInt(userJoined) : userJoined).toLocaleDateString() : '—';
+
+    const label = document.getElementById('requestPhoneLabel');
+    if (label) label.textContent = `An OTP will be sent to ${userPhone}`;
+    const otpLabel = document.getElementById('otpPhoneLabel');
+    if (otpLabel) otpLabel.textContent = `OTP sent to ${userPhone}`;
+
+    // Fetch live locker status
+    try {
+      const r = await fetch(`${API}/users/my-locker-status`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (r.ok) {
+        const d = await r.json();
+        
+        // Status class mappings
+        const stateEl = document.getElementById('homeLockerState');
+        if (stateEl) {
+          stateEl.textContent = (d.status || 'locked').toUpperCase() + ' (Door: ' + (d.doorState || 'closed').toUpperCase() + ')';
+          stateEl.style.color = d.status === 'unlocked' ? 'var(--green)' : d.status === 'alert' ? 'var(--red)' : 'var(--primary)';
+        }
+
+        document.getElementById('homeLastAccess').textContent = d.lastAccess || 'Never';
+
+        // Auth status display
+        const authEl = document.getElementById('homeAuthStatus');
+        if (authEl) {
+          if (d.lockoutUntil && new Date(d.lockoutUntil) > Date.now()) {
+            authEl.textContent = '🔒 Keypad Locked Out';
+            authEl.style.color = 'var(--red)';
+          } else {
+            authEl.textContent = '✅ Secure';
+            authEl.style.color = 'var(--green)';
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('Locker status check failed', e);
+    }
+  }
+
+  /* ── LOGIN ── */
+  async function handleLogin() {
+    const studentId = document.getElementById('loginStudentId').value.trim();
+    const lockerId  = document.getElementById('loginLockerId').value.trim();
+    const phone     = document.getElementById('loginPhone').value.trim();
+    const errEl     = document.getElementById('loginError');
+    const btn       = document.getElementById('loginBtn');
+
+    errEl.innerHTML = '';
+    if (!studentId || !lockerId || !phone) {
+      errEl.innerHTML = '<div class="alert alert-error">Please fill in all fields.</div>';
+      return;
+    }
+
+    btn.disabled = true;
+    try {
+      const r = await fetch(`${API}/users/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: studentId, lockerId, phone })
+      });
+      const d = await r.json().catch(() => ({}));
+
+      if (r.ok) {
+        token      = d.token || '';
+        userName   = d.name  || studentId;
+        userPhone  = phone;
+        userLocker = lockerId;
+        userSid    = studentId;
+        userJoined = d.createdAt || Date.now();
+
+        localStorage.setItem('studentToken',  token);
+        localStorage.setItem('studentName',   userName);
+        localStorage.setItem('studentPhone',  userPhone);
+        localStorage.setItem('studentLocker', userLocker);
+        localStorage.setItem('studentId',     userSid);
+        localStorage.setItem('studentJoined', userJoined);
+
+        populateDashboard();
+
+        if (d.requireOTP) {
+          resetOTP();
+          show('s-otp');
+        } else {
+          show('s-home');
+        }
+      } else {
+        const msg = d.message || 'Login failed. Please check your credentials.';
+        errEl.innerHTML = `<div class="alert alert-error">${msg}</div>`;
+      }
+    } catch (e) {
+      errEl.innerHTML = `<div class="alert alert-error">Connection error: ${e.message}</div>`;
+    }
+    btn.disabled = false;
+  }
+
+  /* ── REGISTER ── */
+  async function handleRegister() {
+    const name      = document.getElementById('regName').value.trim();
+    const studentId = document.getElementById('regStudentId').value.trim();
+    const phone     = document.getElementById('regPhone').value.trim();
+    const pin       = document.getElementById('regPin').value.trim();
+    const confirm   = document.getElementById('regConfirmPin').value.trim();
+    const errEl     = document.getElementById('regError');
+
+    errEl.innerHTML = '';
+
+    if (pin !== confirm) {
+      errEl.innerHTML = '<div class="alert alert-error">PINs do not match.</div>';
+      return;
+    }
+    if (pin.length !== 4) {
+      errEl.innerHTML = '<div class="alert alert-error">PIN must be exactly 4 digits.</div>';
+      return;
+    }
+
+    try {
+      const r = await fetch(`${API}/users/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: studentId, name, phone, pin, confirmPin: confirm })
+      });
+      const d = await r.json().catch(() => ({}));
+      if (r.ok) {
+        errEl.innerHTML = '<div class="alert alert-success">Account created! Please sign in.</div>';
+        setTimeout(() => show('s-login'), 1500);
+      } else {
+        errEl.innerHTML = `<div class="alert alert-error">${d.error || d.message || 'Registration failed.'}</div>`;
+      }
+    } catch (e) {
+      errEl.innerHTML = `<div class="alert alert-error">Connection error: ${e.message}</div>`;
+    }
+  }
+
+  /* ── OTP TIMERS & COOLDOWNS ── */
+  function startOTPTimer(expiryTime) {
+    if (otpTimerInterval) clearInterval(otpTimerInterval);
+    
+    // Enable numpad keys
+    document.querySelectorAll('#s-otp .numpad-key').forEach(btn => btn.disabled = false);
+
+    otpTimerInterval = setInterval(() => {
+      const diff = expiryTime - Date.now();
+      const statusEl = document.getElementById('otpStatus');
+      
+      if (diff <= 0) {
+        clearInterval(otpTimerInterval);
+        if (statusEl) {
+          statusEl.innerHTML = '<div class="alert alert-error">OTP has expired. Please request a new one.</div>';
+        }
+        // Disable numpad keys
+        document.querySelectorAll('#s-otp .numpad-key').forEach(btn => btn.disabled = true);
+        
+        // Also update OTP expiry indicator on home tab
+        const homeOtp = document.getElementById('homeOtpExpiry');
+        if (homeOtp) homeOtp.textContent = 'Expired';
+        return;
+      }
+      
+      const m = Math.floor(diff / 60000);
+      const s = Math.floor((diff % 60000) / 1000);
+      const timerStr = `Expires in ${m}:${s < 10 ? '0' : ''}${s}`;
+      
+      const labelEl = document.getElementById('otpPhoneLabel');
+      if (labelEl) {
+        labelEl.innerHTML = `OTP sent to ${userPhone} <br><span style="font-weight:600; color:var(--orange);">${timerStr}</span>`;
+      }
+
+      // Also update home dashboard OTP expiry indicator
+      const homeOtp = document.getElementById('homeOtpExpiry');
+      if (homeOtp) {
+        homeOtp.textContent = `${m}:${s < 10 ? '0' : ''}${s}`;
+      }
+    }, 1000);
+  }
+
+  function startResendCooldown() {
+    if (resendCooldownInterval) clearInterval(resendCooldownInterval);
+    
+    const resendBtn = document.querySelector('[data-testid="resend-otp-link"]');
+    if (!resendBtn) return;
+    
+    let secondsLeft = 60;
+    resendBtn.disabled = true;
+    resendBtn.style.pointerEvents = 'none';
+    resendBtn.style.opacity = '0.5';
+    resendBtn.textContent = `Resend OTP in ${secondsLeft}s`;
+
+    resendCooldownInterval = setInterval(() => {
+      secondsLeft--;
+      if (secondsLeft <= 0) {
+        clearInterval(resendCooldownInterval);
+        resendBtn.disabled = false;
+        resendBtn.style.pointerEvents = 'auto';
+        resendBtn.style.opacity = '1';
+        resendBtn.textContent = 'Resend OTP';
+        return;
+      }
+      resendBtn.textContent = `Resend OTP in ${secondsLeft}s`;
+    }, 1000);
+  }
+
+  /* ── OTP REQUEST ── */
+  async function sendOTP() {
+    const errEl = document.getElementById('requestError');
+    errEl.innerHTML = '';
+    try {
+      const r = await fetch(`${API}/otp/request`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: userSid, lockerId: userLocker })
+      });
+      const d = await r.json().catch(() => ({}));
+      if (r.ok) {
+        otpExpiry = d.expiry;
+        resetOTP();
+        show('s-otp');
+        startOTPTimer(d.expiry);
+        startResendCooldown();
+        
+        const statusEl = document.getElementById('otpStatus');
+        if (statusEl) {
+          statusEl.innerHTML = `<div class="alert alert-success">SMS Status: ${d.smsStatus || 'Success'}</div>`;
+        }
+      } else {
+        errEl.innerHTML = `<div class="alert alert-error">${d.error || d.message || 'Failed to send OTP.'}</div>`;
+      }
+    } catch (e) {
+      errEl.innerHTML = `<div class="alert alert-error">Connection error: ${e.message}</div>`;
+    }
+  }
+
+  async function resendOTP() {
+    try {
+      const r = await fetch(`${API}/otp/resend`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: userSid, lockerId: userLocker })
+      });
+      const d = await r.json().catch(() => ({}));
+      const el = document.getElementById('otpStatus');
+      if (r.ok) {
+        otpExpiry = d.expiry;
+        resetOTP();
+        startOTPTimer(d.expiry);
+        startResendCooldown();
+        if (el) el.innerHTML = `<div class="alert alert-success">OTP resent! (SMS Status: ${d.smsStatus || 'Success'})</div>`;
+      } else {
+        if (el) el.innerHTML = `<div class="alert alert-error">${d.error || 'Failed to resend OTP.'}</div>`;
+      }
+    } catch (e) {
+      const el = document.getElementById('otpStatus');
+      if (el) el.innerHTML = `<div class="alert alert-error">Error: ${e.message}</div>`;
+    }
+  }
+
+  /* ── OTP DIGIT ENTRY ── */
+  function resetOTP() {
+    otpBuf = [];
+    for (let i = 0; i < 6; i++) {
+      const b = document.getElementById(`otp-box-${i}`);
+      if (b) { b.textContent = ''; b.classList.remove('filled'); }
+    }
+    const s = document.getElementById('otpStatus');
+    if (s) s.innerHTML = '';
+  }
+
+  function otpDigit(d) {
+    if (otpBuf.length >= 6) return;
+    otpBuf.push(String(d));
+    renderOTP();
+    if (otpBuf.length === 6) submitOTP();
+  }
+
+  function otpBack() {
+    if (otpBuf.length === 0) return;
+    otpBuf.pop();
+    renderOTP();
+    const s = document.getElementById('otpStatus');
+    if (s) s.innerHTML = '';
+  }
+
+  function renderOTP() {
+    for (let i = 0; i < 6; i++) {
+      const b = document.getElementById(`otp-box-${i}`);
+      if (!b) continue;
+      if (otpBuf[i] !== undefined) {
+        b.textContent = '●';
+        b.classList.add('filled');
+      } else {
+        b.textContent = '';
+        b.classList.remove('filled');
+      }
+    }
+  }
+
+  async function submitOTP() {
+    const otp   = otpBuf.join('');
+    const statEl = document.getElementById('otpStatus');
+    if (statEl) statEl.innerHTML = '<div class="spinner-wrap"><div class="spinner"></div></div>';
+
+    try {
+      const r = await fetch(`${API}/otp/validate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ lockerId: userLocker, otp })
+      });
+      const d = await r.json().catch(() => ({}));
+      if (r.ok) {
+        if (d.token) { token = d.token; localStorage.setItem('studentToken', token); }
+        if (otpTimerInterval) { clearInterval(otpTimerInterval); otpTimerInterval = null; }
+        // Reset indicator on home
+        const homeOtp = document.getElementById('homeOtpExpiry');
+        if (homeOtp) homeOtp.textContent = '—';
+        resetOTP();
+        showSuccess(userLocker);
+      } else {
+        resetOTP();
+        if (statEl) statEl.innerHTML = `<div class="alert alert-error">${d.error || d.message || 'Invalid OTP.'}</div>`;
+      }
+    } catch (e) {
+      if (statEl) statEl.innerHTML = `<div class="alert alert-error">Connection error: ${e.message}</div>`;
+    }
+  }
+
+  /* ── PIN STATUS & LOCKOUT ── */
+  async function checkPinStatus() {
+    const statusEl = document.getElementById('pinStatus');
+    if (statusEl) statusEl.innerHTML = '<div class="spinner-wrap"><div class="spinner"></div> Loading status…</div>';
+    
+    try {
+      const r = await fetch(`${API}/pin/status`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (r.status === 401) { logout(); return; }
+      if (r.ok) {
+        const d = await r.json();
+        pinAttemptsRemaining = d.remainingAttempts;
+        pinLockoutUntil = d.lockoutUntil;
+        updatePinUI();
+      }
+    } catch (e) {
+      console.error('Failed to get PIN status', e);
+    }
+  }
+
+  function updatePinUI() {
+    const statusEl = document.getElementById('pinStatus');
+    if (!statusEl) return;
+    
+    if (pinTimerInterval) clearInterval(pinTimerInterval);
+
+    if (pinLockoutUntil && new Date(pinLockoutUntil) > Date.now()) {
+      document.querySelectorAll('#s-pin .numpad-key').forEach(btn => btn.disabled = true);
+      
+      pinTimerInterval = setInterval(() => {
+        const diff = new Date(pinLockoutUntil) - Date.now();
+        if (diff <= 0) {
+          clearInterval(pinTimerInterval);
+          pinLockoutUntil = null;
+          pinAttemptsRemaining = 5;
+          updatePinUI();
+          populateDashboard(); // refresh lockout badge on home screen
+          return;
+        }
+        const m = Math.floor(diff / 60000);
+        const s = Math.floor((diff % 60000) / 1000);
+        statusEl.innerHTML = `<div class="alert alert-error" style="font-weight:600;">🔒 Too many failed attempts. Keypad locked out. Resuming in ${m}:${s < 10 ? '0' : ''}${s}</div>`;
+      }, 1000);
+      return;
+    }
+
+    document.querySelectorAll('#s-pin .numpad-key').forEach(btn => btn.disabled = false);
+    
+    if (pinAttemptsRemaining === 1) {
+      statusEl.innerHTML = `<div class="alert alert-warning" style="font-weight:700; color:var(--red); animation: pulse 1s infinite alternate;">⚠️ Warning: This is your final attempt! Entering an incorrect PIN will lock you out for 5 minutes.</div>`;
+    } else if (pinAttemptsRemaining < 5) {
+      statusEl.innerHTML = `<div class="alert alert-error" style="font-weight:600;">⚠️ ${pinAttemptsRemaining} attempts remaining before lockout.</div>`;
+    } else {
+      statusEl.innerHTML = `<div style="color:var(--muted); font-size:0.9rem;">Please enter your 4-digit PIN.</div>`;
+    }
+  }
+
+  /* ── PIN DIGIT ENTRY ── */
+  function resetPIN() {
+    pinBuf = [];
+    for (let i = 0; i < 4; i++) {
+      const b = document.getElementById(`pin-box-${i}`);
+      if (b) { b.textContent = ''; b.classList.remove('filled'); }
+    }
+    const s = document.getElementById('pinStatus');
+    if (s) s.innerHTML = '';
+  }
+
+  function pinDigit(d) {
+    if (pinBuf.length >= 4) return;
+    pinBuf.push(String(d));
+    renderPIN();
+    if (pinBuf.length === 4) submitPIN();
+  }
+
+  function pinBack() {
+    if (pinBuf.length === 0) return;
+    pinBuf.pop();
+    renderPIN();
+    const s = document.getElementById('pinStatus');
+    if (s) s.innerHTML = '';
+  }
+
+  function renderPIN() {
+    for (let i = 0; i < 4; i++) {
+      const b = document.getElementById(`pin-box-${i}`);
+      if (!b) continue;
+      if (pinBuf[i] !== undefined) {
+        b.textContent = '●';
+        b.classList.add('filled');
+      } else {
+        b.textContent = '';
+        b.classList.remove('filled');
+      }
+    }
+  }
+
+  async function submitPIN() {
+    const pin    = pinBuf.join('');
+    const statEl = document.getElementById('pinStatus');
+    if (statEl) statEl.innerHTML = '<div class="spinner-wrap"><div class="spinner"></div> Validating…</div>';
+
+    try {
+      const r = await fetch(`${API}/pin/validate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ pin, lockerId: userLocker })
+      });
+      const d = await r.json().catch(() => ({}));
+      if (r.ok) {
+        resetPIN();
+        showSuccess(userLocker);
+      } else {
+        pinAttemptsRemaining = d.remainingAttempts !== undefined ? d.remainingAttempts : pinAttemptsRemaining;
+        pinLockoutUntil = d.lockoutUntil || null;
+        resetPIN();
+        updatePinUI();
+        if (d.error) {
+          const errDiv = document.createElement('div');
+          errDiv.className = 'alert alert-error';
+          errDiv.style.marginTop = '0.5rem';
+          errDiv.textContent = d.error;
+          statEl.appendChild(errDiv);
+        }
+      }
+    } catch (e) {
+      if (statEl) statEl.innerHTML = `<div class="alert alert-error">Connection error: ${e.message}</div>`;
+    }
+  }
+
+  /* ── SUCCESS ── */
+  function showSuccess(lockerId) {
+    if (successTimer) clearInterval(successTimer);
+    document.getElementById('successTitle').textContent = `Locker ${lockerId} Unlocked!`;
+    let secs = 10;
+    document.getElementById('successSecs').textContent = secs;
+    show('s-success');
+    successTimer = setInterval(() => {
+      secs--;
+      const el = document.getElementById('successSecs');
+      if (el) el.textContent = secs;
+      if (secs <= 0) { clearInterval(successTimer); successTimer = null; show('s-home'); }
+    }, 1000);
+  }
+
+  function successDone() {
+    if (successTimer) { clearInterval(successTimer); successTimer = null; }
+    show('s-home');
+  }
+
+  /* ── USSD ── */
+  function goUSSD() {
+    const code = `*384*${userLocker || 'locker'}#`;
+    document.getElementById('ussdCodeDisplay').textContent = code;
+    closeUSSD();
+    show('s-ussd');
+  }
+
+  function copyUSSD() {
+    const code = document.getElementById('ussdCodeDisplay').textContent;
+    navigator.clipboard.writeText(code).catch(() => {});
+  }
+
+  /* ── HISTORY ── */
+  function goHistory() {
+    show('s-history');
+    
+    // Reset filters
+    const methodEl = document.getElementById('history-method-filter');
+    const resultEl = document.getElementById('history-result-filter');
+    const sortEl = document.getElementById('history-sort-order');
+    if (methodEl) methodEl.value = 'ALL';
+    if (resultEl) resultEl.value = 'ALL';
+    if (sortEl) sortEl.value = 'NEWEST';
+
+    loadHistory();
+  }
+
+  async function loadHistory() {
+    const el = document.getElementById('historyList');
+    el.innerHTML = '<div class="spinner-wrap"><div class="spinner"></div> Loading…</div>';
+    try {
+      const r = await fetch(`${API}/access/history`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (r.status === 401) { logout(); return; }
+      currentHistoryData = r.ok ? await r.json() : [];
+      applyHistoryFilter();
+    } catch (e) {
+      el.innerHTML = `<div class="alert alert-error">Error: ${e.message}</div>`;
+    }
+  }
+
+  function applyHistoryFilter() {
+    const methodFilter = document.getElementById('history-method-filter')?.value || 'ALL';
+    const resultFilter = document.getElementById('history-result-filter')?.value || 'ALL';
+    const sortOrder = document.getElementById('history-sort-order')?.value || 'NEWEST';
+    const el = document.getElementById('historyList');
+
+    let filtered = currentHistoryData;
+
+    // Filter by method
+    if (methodFilter !== 'ALL') {
+      filtered = filtered.filter(item => {
+        const type = (item.eventType || '').toUpperCase();
+        if (methodFilter === 'OTP') return type.includes('OTP');
+        if (methodFilter === 'PIN') return type.includes('PIN');
+        if (methodFilter === 'USSD') return type.includes('USSD');
+        if (methodFilter === 'ADMIN') return type.includes('ADMIN');
+        return true;
+      });
+    }
+
+    // Filter by result
+    if (resultFilter !== 'ALL') {
+      filtered = filtered.filter(item => {
+        const isSuccess = item.status === 'success' || item.status === 'SUCCESS';
+        return resultFilter === 'SUCCESS' ? isSuccess : !isSuccess;
+      });
+    }
+
+    // Sort order
+    filtered.sort((a, b) => {
+      return sortOrder === 'NEWEST' 
+        ? b.timestamp - a.timestamp 
+        : a.timestamp - b.timestamp;
+    });
+
+    if (filtered.length === 0) {
+      el.innerHTML = '<div class="empty-state"><p>No access records matching filters.</p></div>';
+      return;
+    }
+
+    let html = `
+      <div style="overflow-x:auto;">
+        <table style="width:100%; border-collapse:collapse; text-align:left; font-size:0.9rem; color:var(--text);">
+          <thead>
+            <tr style="background:var(--gray-100); border-bottom:1px solid var(--border);">
+              <th style="padding:0.75rem 0.5rem;">Timestamp</th>
+              <th style="padding:0.75rem 0.5rem;">Locker</th>
+              <th style="padding:0.75rem 0.5rem;">Method</th>
+              <th style="padding:0.75rem 0.5rem;">Result</th>
+              <th style="padding:0.75rem 0.5rem;">Failure Reason</th>
+            </tr>
+          </thead>
+          <tbody>
+    `;
+
+    filtered.forEach(item => {
+      const ts = new Date(item.timestamp).toLocaleString();
+      const locker = item.lockerId || '—';
+      
+      // Determine method label
+      const event = (item.eventType || '').toUpperCase();
+      let method = 'PIN';
+      if (event.includes('OTP') && !event.includes('USSD')) method = 'OTP';
+      else if (event.includes('USSD')) method = 'USSD';
+      else if (event.includes('ADMIN')) method = 'Administrator';
+
+      // Result formatting
+      const isSuccess = item.status === 'success' || item.status === 'SUCCESS';
+      const resultText = isSuccess ? '✅ Granted' : '❌ Denied';
+      const resultStyle = isSuccess ? 'color:var(--green); font-weight:700;' : 'color:var(--red); font-weight:700;';
+
+      // Failure Reason parsing
+      const reason = isSuccess ? '—' : (item.details || item.description || 'Authentication failed');
+
+      html += `
+        <tr style="border-bottom:1px solid var(--border);">
+          <td style="padding:0.75rem 0.5rem; white-space:nowrap;">${ts}</td>
+          <td style="padding:0.75rem 0.5rem;">Locker ${locker}</td>
+          <td style="padding:0.75rem 0.5rem; font-weight:600;">${method}</td>
+          <td style="padding:0.75rem 0.5rem; ${resultStyle}">${resultText}</td>
+          <td style="padding:0.75rem 0.5rem; color:var(--gray-600); font-style:italic;">${reason}</td>
+        </tr>
+      `;
+    });
+
+    html += `
+          </tbody>
+        </table>
+      </div>
+    `;
+    el.innerHTML = html;
+  }
+
+  /* ── USSD SIMULATOR ── */
+  function startUSSDSimulation() {
+    document.getElementById('ussd-sim-box').style.display = 'block';
+    ussdText = '';
+    activeUSSDOtp = '';
+    document.getElementById('ussd-copy-otp-btn').style.display = 'none';
+    runUSSDRequest('');
+  }
+
+  function closeUSSD() {
+    document.getElementById('ussd-sim-box').style.display = 'none';
+    if (ussdTimerInterval) clearInterval(ussdTimerInterval);
+  }
+
+  function startUSSDTimer() {
+    if (ussdTimerInterval) clearInterval(ussdTimerInterval);
+    ussdTimeRemaining = 30;
+    document.getElementById('ussd-timer').textContent = `${ussdTimeRemaining}s`;
+    
+    ussdTimerInterval = setInterval(() => {
+      ussdTimeRemaining--;
+      document.getElementById('ussd-timer').textContent = `${ussdTimeRemaining}s`;
+      
+      if (ussdTimeRemaining <= 0) {
+        clearInterval(ussdTimerInterval);
+        document.getElementById('ussd-display').textContent = 'USSD Session Timeout. Connection closed.';
+        document.getElementById('ussd-input-group').style.display = 'none';
+        document.getElementById('ussd-close-group').style.display = 'flex';
+        document.getElementById('ussd-copy-otp-btn').style.display = 'none';
+      }
+    }, 1000);
+  }
+
+  async function runUSSDRequest(textVal) {
+    const displayEl = document.getElementById('ussd-display');
+    displayEl.innerHTML = '<div class="spinner-wrap"><div class="spinner"></div> Connecting…</div>';
+    document.getElementById('ussd-input-group').style.display = 'none';
+    document.getElementById('ussd-close-group').style.display = 'none';
+
+    try {
+      const r = await fetch(`${API}/ussd/session`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: textVal })
+      });
+      const resText = await r.text();
+      
+      startUSSDTimer();
+      
+      if (resText.startsWith('CON')) {
+        const prompt = resText.substring(3).trim();
+        displayEl.textContent = prompt;
+        document.getElementById('ussd-input-group').style.display = 'block';
+        document.getElementById('ussd-input-val').value = '';
+        document.getElementById('ussd-input-val').focus();
+      } else if (resText.startsWith('END')) {
+        const message = resText.substring(3).trim();
+        displayEl.textContent = message;
+        
+        const match = message.match(/\b\d{6}\b/);
+        if (match) {
+          activeUSSDOtp = match[0];
+          document.getElementById('ussd-copy-otp-btn').style.display = 'block';
+        }
+        
+        document.getElementById('ussd-close-group').style.display = 'flex';
+        if (ussdTimerInterval) clearInterval(ussdTimerInterval);
+        document.getElementById('ussd-timer').textContent = 'Closed';
+      } else {
+        displayEl.textContent = resText;
+        document.getElementById('ussd-close-group').style.display = 'flex';
+        if (ussdTimerInterval) clearInterval(ussdTimerInterval);
+      }
+    } catch (e) {
+      displayEl.textContent = `Connection error: ${e.message}`;
+      document.getElementById('ussd-close-group').style.display = 'flex';
+    }
+  }
+
+  function sendUSSDStep() {
+    const val = document.getElementById('ussd-input-val').value.trim();
+    if (!val) return;
+    ussdText = ussdText ? `${ussdText}*${val}` : val;
+    runUSSDRequest(ussdText);
+  }
+
+  function copyUSSDOtp() {
+    if (!activeUSSDOtp) return;
+    navigator.clipboard.writeText(activeUSSDOtp).then(() => {
+      alert(`OTP ${activeUSSDOtp} copied to clipboard! You can now use it to unlock on the dashboard.`);
+    }).catch(() => {
+      alert(`Failed to copy. OTP is ${activeUSSDOtp}`);
+    });
+  }
+
+  /* ── PHONE UPDATE ── */
+  function togglePhoneEdit(showPanel) {
+    document.getElementById('phone-edit-panel').style.display = showPanel ? 'block' : 'none';
+    document.getElementById('editPhoneBtn').style.display = showPanel ? 'none' : 'block';
+    document.getElementById('phoneEditError').innerHTML = '';
+    document.getElementById('editPhoneInput').value = '';
+    document.getElementById('editPhonePin').value = '';
+  }
+
+  async function submitPhoneUpdate() {
+    const phone = document.getElementById('editPhoneInput').value.trim();
+    const pin = document.getElementById('editPhonePin').value.trim();
+    const errEl = document.getElementById('phoneEditError');
+    errEl.innerHTML = '';
+
+    if (!phone || !pin) {
+      errEl.innerHTML = '<div class="alert alert-error">Please fill in all fields.</div>';
+      return;
+    }
+
+    try {
+      const r = await fetch(`${API}/users/update-phone`, {
+        method: 'PUT',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}` 
+        },
+        body: JSON.stringify({ phone, pin })
+      });
+      const d = await r.json().catch(() => ({}));
+      if (r.ok) {
+        userPhone = phone;
+        localStorage.setItem('studentPhone', phone);
+        populateDashboard();
+        togglePhoneEdit(false);
+        errEl.innerHTML = '<div class="alert alert-success">Phone number updated successfully.</div>';
+      } else {
+        errEl.innerHTML = `<div class="alert alert-error">${d.error || d.message || 'Failed to update phone number.'}</div>`;
+      }
+    } catch (e) {
+      errEl.innerHTML = `<div class="alert alert-error">Connection error: ${e.message}</div>`;
+    }
+  }
+
+  /* ── LOGOUT ── */
+  function logout() {
+    ['studentToken','studentName','studentPhone','studentLocker','studentId','studentJoined']
+      .forEach(k => localStorage.removeItem(k));
+    token = ''; userName = ''; userPhone = ''; userLocker = ''; userSid = ''; userJoined = '';
+    document.getElementById('headerRight').classList.remove('visible');
+    document.getElementById('bottomTabBar').classList.remove('visible');
+    resetOTP();
+    resetPIN();
+    try { togglePhoneEdit(false); } catch (_) {}
+    show('s-login');
+  }
+
+  /* ── start ── */
+  init();
+</script>
+</body>
+</html>
